@@ -1,0 +1,625 @@
+
+<!-- saved from url=(0063)http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4.shtml -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"> 
+   <title>
+      Project 4, Fake Min-Max Heaps,
+      CMSC 341 Spring 2017
+   </title> 
+   <link rel="shortcut icon" href="http://userpages.umbc.edu/~chang/cs341.s17/chang.ico">
+   <link rel="stylesheet" type="text/css" href="./Project 4, Fake Min-Max Heaps, CMSC 341 Spring 2017_files/style-graph.css">
+</head> 
+
+<body> 
+    <div id="wrapper">
+      <div id="header">
+	<h1>CMSC 341 Data Structures — All Sections — Spring 2017</h1>
+        <div id="headerimg" class="donotprint"></div>
+	<div id="nav" class="donotprint">
+	  <ul>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/">Home</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/sections.shtml">Sections</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/syllabus.shtml">Syllabus</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/schedule.shtml">Schedule</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/homework/">Homework</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/">Projects</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/resources/">Resources</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/faq.shtml">FAQ</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/staff/">Staff</a></li>
+	  </ul>
+	</div>
+     </div>
+     <div id="content">
+
+<!-- END HEADER -->
+
+
+
+
+<h1>Project 4, Fake Min-Max Heaps</h1>
+
+<h2>Due: Tuesday, April 25, 8:59pm</h2>
+
+<hr>
+<h2>Addenda</h2>
+<ul>
+   <li> [Apr 18 11:22] Fixed bug in sanity check 
+   <xmp>   H.locateMin(2*i,rightKey,pos) ;
+   </xmp>
+   should be
+   <xmp>   H.locateMin(2*i+1,rightKey,pos) ;
+   </xmp>
+   Files have been updated. Please re-download <tt>test1.cpp</tt>, ...,
+   <tt>test6.cpp</tt>.
+   </li><li> [Apr 10 21:50] Additional implementation notes.
+   </li><li> [Apr 10 21:45] Test files for checking copy constructor and
+   assignment operator posted.
+</li></ul>
+<font color="orange">Corrections/clarifications in orange below.</font>
+
+<hr>
+<h2>Objectives</h2>
+
+The objective of this programming assignment is 
+to familiarize you with the binary heap data structure 
+and for you to gain some experience designing templated
+C++ code.
+ 
+
+<hr>
+<h2>Background</h2> 
+
+<p>
+The premise of this project is that you've been asked, say by your boss,
+to implement a min-max heap. This data structure allows you to insert,
+delete the smallest item and delete the largest item all in 
+<i>O</i>( log <i>n</i> ) time. 
+From what you have heard about min-max
+heaps (e.g.,
+<a href="https://www.csee.umbc.edu/courses/undergraduate/341/fall13/projects/proj3.shtml">Project 3</a>
+from the Fall 2013 CMSC 341), you know that they are difficult to
+implement and  are chock-full of weird cases
+(q.v., <a href="https://www.csee.umbc.edu/courses/undergraduate/341/fall13/projects/proj3-fourth-case.shtml">
+Case 4</a>). Suffice it to say, you really don't want to implement real
+min-max heaps.
+</p>
+
+<p>
+So, you concoct a plan to implement a <i>fake</i> min-max heap. Why not
+just store every item in two heaps? a min-heap an a max-heap. Presumably
+insertion would still be in <i>O</i>( log <i>n</i> ) time, since you just
+insert twice. You could delete the smallest item from the min-heap and
+the largest item from the max-heap in <i>O</i>( log <i>n</i> ) time. 
+You just have to store everything twice, but memory is cheap, right?
+Oh wait, when you delete the smallest item from the min-heap, its
+"twin" in the max-heap must also be removed. Since heaps do not support
+search, you'd have to link the "twins" somehow so when one is removed
+from one of the heaps, the other one can also be removed quickly.
+</p>
+
+<p>
+Since your boss is only semi-literate in C++, you figure you can probably 
+get away with this ruse --- you just can't be too obvious about it.
+For example, you can't have two separate classes, one for a min-heap and 
+one for a max-heap. Also, having <tt>if</tt> statements that check a flag and then
+run the code for a min-heap versus a max-heap would be way too obvious.
+Since your boss wants you to make the code templated anyway,
+your plan is to make a templated heap class that will be instantiated once
+for a min-heap and another time for a max-heap.
+</p>
+
+
+
+<hr>
+<h2>Assignment</h2>
+
+<p>
+<i>Note: Running time is one of the most important considerations in
+the implementation of a data structure. Programs that produce the
+desired output but exceed the required running times are considered
+<i>wrong</i> implementations and will receive substantial deductions
+during grading.</i>
+</p>
+
+<p>
+Your assignment is to design and implement a templated C++
+class <tt>MinMaxHeap</tt> that supports insert, deleteMin
+and deleteMax in <i>O</i>( log <i>n</i> ) time. 
+You are given general strategies and some specific requirements, but
+most of the class design and implementation is up to you.
+</p>
+
+<p>
+The general requirements are:
+</p><ol>
+  <li> <tt>MinMaxHeap</tt> must support insert, deleteMin
+  and deleteMax in <i>O</i>( log <i>n</i> ) time. 
+  The restriction here is that searching for a key
+  in a heap takes linear time. So, you can't delete the
+  root of one heap and look for its twin in the other heap.
+  That will take too long.
+
+  </li><li> You may not use STL container classes. (Strings are OK.)
+
+  </li><li> Your templated min-max heap must work with any class that
+  supports assignment and comparison. (See test programs.)
+
+  </li><li> You must have one implementation of a heap class
+  that can be used as a min-heap and a max-heap.
+  The code must use a function pointer to compare items.
+  The behavior of this comparison function is what
+  determines whether the heap is a min-heap or a max-heap.
+</li></ol>
+
+
+
+<hr>
+<h2>General Strategies</h2>
+
+<p>
+</p><ol>
+<li> You will need a wrapper class <tt>MinMaxHeap</tt> that has the
+functions used by the main program and a separate <tt>Heap</tt> class
+that does the "bubbling up" and "trickling down" to maintain a heap.
+A <tt>MinMaxHeap</tt> object will have two <tt>Heap</tt> objects --- one
+for the min-heap and one for the max-heap.
+
+</li><li> Each heap has to "know" that it is part of a min-max heap. It just
+doesn't "know" if it is the min-heap or the max-heap.
+
+</li><li> Each item in either the min-heap or the max-heap has to keep track
+of its "twin" in the other heap. The easiest way to do this is to store
+the index of the twin in the other heap. For example, consider the
+following output from the <tt>dump()</tt> function of a small min-max
+heap. The line
+<xmp>   Heap[2] = (6,5)
+</xmp>
+means that key value 6 is stored in index 2 of the min-heap. The second
+value 5 indicates that key 6 is in index 5 of the max-heap. This
+confirmed by the output:
+<xmp>   Heap[5] = (6,2)
+</xmp>
+in the max-heap. That is, the 5th item does indeed hold the key value 6.
+It also knows that in the min-heap, key value 6 is stored in index 2.
+You can confirm for each item in each heap that the index of the item's 
+twin in the other heap is recorded properly. You can also confirm
+that the min-heap is heap ordered correctly with the smallest item
+in the root and the max-heap is heap ordered correctly with the largest itme
+int the root.
+
+<xmp class="code">
+... MinMaxHeap::dump() ...
+
+------------Min Heap------------
+size = 9, capacity = 25
+Heap[1] = (2,6)
+Heap[2] = (6,5)
+Heap[3] = (5,8)
+Heap[4] = (10,3)
+Heap[5] = (9,9)
+Heap[6] = (7,7)
+Heap[7] = (16,1)
+Heap[8] = (12,2)
+Heap[9] = (11,4)
+
+------------Max Heap------------
+size = 9, capacity = 25
+Heap[1] = (16,7)
+Heap[2] = (12,8)
+Heap[3] = (10,4)
+Heap[4] = (11,9)
+Heap[5] = (6,2)
+Heap[6] = (2,1)
+Heap[7] = (7,6)
+Heap[8] = (5,3)
+Heap[9] = (9,5)
+--------------------------------
+</xmp>
+<br>
+
+</li><li>
+Every time an item is moved in one of the heaps, 
+say in the bubbling up process after insertion, you have to
+update the item's twin so the twin "knows" the item's new position.
+(I.e., after moving an item, a dump should still be consistent as
+described above.)  Look at the rest of the output from first
+test program for examples: <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test1.txt">test1.txt</a>.
+
+</li><li> Each heap needs access to the internals of the other heap. So, in
+the <tt>MinMaxHeap</tt> constructor you have to create two heaps and then
+give each <tt>Heap</tt> a pointer to the other <tt>Heap</tt>.
+
+</li><li> You'll have to make templated stand-alone functions (i.e., not
+member functions) that compare two heap items and says which one is
+bigger or which one is smaller. You can assume that the type/class used to instantiate the
+templates supports the six comparison operators:
+&lt;, &lt;=, ==, !=, &gt;= and &gt;. The <tt>MinMaxHeap</tt> constructor
+should give a pointer to one of these comparison functions to the appropriate
+<tt>Heap</tt> object. That is what determines if the <tt>Heap</tt> is a
+max heap or a min heap.
+
+</li><li> The <tt>MinMaxHeap</tt> class has to coordinate insertion and
+deletion between the two heaps. For example, suppose that during
+insertion, you insert in the min-heap first and then insert in the max-heap.
+When you insert in the min-heap, it does not yet have a twin in the
+max-heap. After inserting in the min-heap, the <tt>MinMaxHeap</tt>
+insertion function has to know the location of the item in 
+the array for the min-heap. This index has to be recorded with
+the item's twin in the max-heap. Then, the opposite has to happen: 
+the newly inserted item's location in the max-heap must be
+recorded with its twin in the min-heap.
+
+<p>
+A similar coordination must also take place for deletion.
+
+</p></li><li> Your heaps have to support deleting an item given its index. 
+(I.e., you have to be able to delete nodes other than the root.)
+The removed item should be replaced by the last item in the heap,
+as we've seen when the root is removed.
+However, when we fix the heap, we may have to bubble up or trickle
+down. (Re-read the last sentence.)
+
+
+</li></ol>
+
+<hr>
+<h2>Specific Requirements</h2>
+<ol>
+
+<p>
+</p><li>
+Your class definitions must be in a single file called
+<tt>MinMaxHeap.h</tt> (case sensitive). Client programs
+that use the <tt>MinMaxHeap</tt> class should be able to
+do so simply using:
+<xmp class="code">   #include "MinMaxHeap.h"
+</xmp>
+All of the template implementations should be in a file
+called <tt>MinMaxHeap.cpp</tt> (case sensitive).
+
+
+<p>
+</p></li><li>
+The <tt>MinMaxHeap</tt> class must have a constructor with the
+signature:
+<p></p><xmp class="code">   template <typename T>
+   MinMaxHeap<T>::MinMaxHeap(int capacity)  ;
+</xmp><p></p>
+The constructor must create a <tt>MinMaxHeap</tt> object
+capable of holding <tt>capacity</tt> items. The object
+created by the constructor must be able to accept 
+insertion and deletion calls right after the constructor is done.
+
+
+</li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have a 
+copy constructor with the signature:
+</p><p></p><xmp class="code">   template <typename T>
+   MinMaxHeap<T>::MinMaxHeap(const MinMaxHeap<T>& other)  ;
+</xmp><p></p>
+The constructor must create a copy of the <tt>MinMaxHeap</tt> object
+given in the parameter. The copied object must have its own allocated 
+memory.
+
+</li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have a 
+destructor with the signature:
+</p><p></p><xmp class="code">   template <typename T>
+   MinMaxHeap<T>::~MinMaxHeap()  ;
+</xmp><p></p>
+The destructor must deallocate any dynamically allocated memory.
+
+</li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have an overloaded
+assignment operator with the signature:
+</p><p></p><xmp class="code">   template <typename T>
+   const MinMaxHeap<T>& MinMaxHeap<T>::operator=(const MinMaxHeap<T>& rhs)  ;
+</xmp><p></p>
+The assignment operator must deallocate memory in the host object and
+copy the <tt>rhs</tt> <tt>MinMaxHeap</tt> into the host.
+
+</li><li>
+<p>
+Your compiled code must run without memory leaks.
+
+</p></li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have a member function
+called <tt>size</tt> that returns the number of items in
+the min-max heap. The <tt>size()</tt> function must have
+the signature:
+</p><p></p><xmp class="code">   template <typename T>
+   int MinMaxHeap<T>::size() ;
+</xmp><p></p>
+<p>The <tt>size()</tt> function must run constant
+time to receive full credit.
+
+</p></li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have a member function
+called <tt>insert</tt> that adds the item given in the 
+parameter to the min-max heap.
+The <tt>insert()</tt> function must have
+the signature:
+</p><p></p><xmp class="code">   template <typename T>
+   void MinMaxHeap<T>::insert(const T& data) ;
+</xmp><p></p>
+If min-max heap cannot hold anymore items (i.e., it has reached
+capacity), then <tt>insert()</tt> should throw a <tt>out_of_range</tt>
+exception.
+
+<p>The <tt>insert()</tt> function must run in <i>O</i>(log <i>n</i> )
+time to receive full credit.
+
+</p></li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have a member function
+called <tt>deleteMin</tt> that removes the smallest item
+in the min-max heap and returns the key value of the deleted
+item.
+The <tt>deleteMin()</tt> function must have
+the signature:
+</p><p></p><xmp class="code">   template <typename T>
+   T MinMaxHeap<T>::deleteMin() ;
+</xmp><p></p>
+If the heap is empty, the <tt>deleteMin()</tt> function 
+should throw a <tt>out_of_range</tt> exception.
+
+<p>The <tt>deleteMin()</tt> function must run in <i>O</i>(log <i>n</i> )
+time to receive full credit.
+
+</p></li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have a member function
+called <tt>deleteMax</tt> that removes the largest item
+in the min-max heap and returns the key value of the deleted
+item.
+The <tt>deleteMax()</tt> function must have
+the signature:
+</p><p></p><xmp class="code">   template <typename T>
+   T MinMaxHeap<T>::deleteMax() ;
+</xmp><p></p>
+If the heap is empty, the <tt>deleteMax()</tt> function 
+should throw a <tt>out_of_range</tt> exception.
+
+<p>The <tt>deleteMax()</tt> function must run in <i>O</i>( log <i>n</i> )
+time to receive full credit.
+
+</p></li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have a member function
+called <tt>dump</tt> that prints out the contents of
+the min-max heap including the positions of each key
+in the min-heap and the max-heap along with recorded
+position of its "twin". See formatting examples in
+the sample output below.
+The <tt>dump()</tt> function must have
+the signature:
+</p><p></p><xmp class="code">   template <typename T>
+   void MinMaxHeap<T>::dump() ;
+</xmp><p></p>
+
+</li><li>
+<p>
+The <tt>MinMaxHeap</tt> class must have two member functions
+used for grading called <tt>locateMin</tt> and <tt>locateMax</tt>.
+These functions should have the prototype:
+</p><p></p><xmp class="code">   template <typename T>
+   void MinMaxHeap<T>::locateMin(int pos, T& data, int& index) ;
+
+   template <typename T>
+   void MinMaxHeap<T>::locateMax(int pos, T& data, int& index) ;
+</xmp><p></p>
+The function <tt>locateMin</tt> has two reference parameters for
+"return values". The <tt>data</tt> parameter should hold the 
+value of the item in position <tt>pos</tt> of the min-heap.
+The <tt>index</tt> parameter should hold the location of
+the item's "twin" in the other heap.
+
+<p>
+The <tt>locateMax</tt> function have the analogous requirements.
+</p></li></ol>
+
+<p>
+Your code must run without segmentation fault and without memory leaks.
+For grading purposes, memory leaks are considered as bad as segmentation
+faults. This is because many segmentation faults are cause by poorly
+written destructors. A program with an empty destructor might avoid some
+segmentation faults but will leak memory horribly. Thus, not
+implementing a destructor or not deleting unused memory must incur a
+penalty that is equivalent to a segmentation fault.
+</p>
+
+
+<hr>
+<a name="tests">
+<h2>Test Programs</h2>
+</a>
+
+<p>
+Here are sample driver programs to test your implementation.
+<font color="red"><i>Passing these tests do not mean you will receive
+100% on your project. It does not guarantee that you will pass tests
+used in grading. You should make additional tests of your
+own!</i></font>
+</p>
+
+<ul>
+<li>
+Test <tt>MinMaxHeap</tt> with <tt>int</tt> data.
+A <tt>sanityCheck()</tt> function is provided.
+Compile using:
+<xmp>   g++ test1.cpp
+</xmp>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test1.cpp">test1.cpp</a>
+<br>
+Sample Output:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test1.txt">test1.txt</a>
+
+</li><li>
+Test <tt>MinMaxHeap</tt> with the <tt>string</tt> data.
+A <tt>sanityCheck()</tt> function is provided.
+Compile using:
+<xmp>   g++ test2.cpp
+</xmp>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test2.cpp">test2.cpp</a>
+<br>
+Sample output:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test2.txt">test2.txt</a>
+
+</li><li>
+Test <tt>MinMaxHeap</tt> with the <tt>NoCopyString</tt> class.
+A <tt>sanityCheck()</tt> function is provided.
+Compile using:
+<xmp>   g++ test3.cpp NoCopyString.cpp
+</xmp>
+Driver program: <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test3.cpp">test3.cpp</a>,
+<br>
+<tt>NoCopyString</tt> class:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/NoCopyString.h">NoCopyString.h</a>, 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/NoCopyString.cpp">NoCopyString.cpp</a>, 
+<br>
+Sample output: 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test3.txt">test3.txt</a>
+
+
+</li><li>
+Bigger test of <tt>MinMaxHeap</tt> with <tt>int</tt> data.
+A <tt>sanityCheck()</tt> function is provided. 
+The keys in the <tt>MinMaxHeap</tt> are also checked
+against an equivalent STL <tt>multiset</tt>.
+Only <tt>deleteMin()</tt> is checked because STL
+<tt>multiset::erase()</tt> doesn't want to erase reverse
+iterators.
+Compile using:
+<xmp>   g++ test4.cpp 
+</xmp>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test4.cpp">test4.cpp</a> 
+<br>
+Sample output: 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test4.txt">test4.txt</a>
+
+</li><li>
+Same as previous test, except it checks <tt>deleteMax()</tt>
+instead of <tt>deleteMin()</tt>.
+Compile using:
+<xmp>   g++ test5.cpp 
+</xmp>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test5.cpp">test5.cpp</a> 
+<br>
+Sample output: 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test5.txt">test5.txt</a>
+
+</li><li>
+<font color="orange">
+Test copy constructor, destructor and assignment operator
+Should test this with valgrind
+<br>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test6.cpp">test6.cpp</a> 
+<br>
+Sample output: 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj4files/test6.txt">test6.txt</a>
+</font>
+
+
+</li></ul>
+<p></p>
+
+
+<hr>
+<h2>Implementation Notes</h2> 
+
+<i>Here we list some recommendations and point out some traps and
+pitfalls.</i>
+
+<ul> 
+
+<li>
+Review C++ template syntax before starting. Remember that you should 
+<p></p><xmp class="code">   #include "MinMaxHeap.cpp" 
+</xmp><p></p>
+at the bottom of the header file. Also, the .cpp file must also
+be guarded with <tt>#ifndef</tt>.
+
+</li><li>
+Just start at index 1 for the heaps. The "wasted" storage in
+the 0-th index could be useful (hint, hint).
+
+</li><li>
+<font color="orange">
+Beware of off-by-one errors since the 0-th item of the heap array is not
+used. A heap with capacity for 100 items needs 101 entries indexed
+0 thru 100.
+</font>
+
+</li><li>
+After you delete an item from a heap, the "twin" object has an 
+invalid index for its twin.
+
+</li><li>
+There is a special case for deleting the last item of a heap.
+This is because we would usually swap in the last item to replace
+the item that is deleted. However, if are deleting the last item, then
+we would be swapping into an invalid location.
+
+</li><li>
+<font color="orange">
+When a <tt>MinMaxHeap</tt> is copied, you must make sure that in the
+new <tt>MinMaxHeap</tt>, the new min-heap and the new max-heap 
+are referencing each other and not the max-heap and min-heap of 
+the original <tt>MinMaxHeap</tt>. The same situation applies for 
+assignment.
+</font>
+
+</li></ul>
+
+
+<hr>
+<h2>What to Submit</h2>
+
+<p>
+You must submit the following files to the <tt>proj4</tt> directory.
+</p>
+<p>
+</p><ul>
+<li> <tt>MinMaxHeap.h</tt>
+</li><li> <tt>MinMaxHeap.cpp</tt>
+</li><li> <tt>Driver.cpp</tt>
+</li></ul>
+<p></p>
+<p>
+The <tt>Driver.cpp</tt> program should include tests showing the parts 
+of your project that work correctly.
+</p>
+
+<p>
+If you followed the instructions in the 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/submission.shtml">Project Submission</a> 
+page to set up your directories, you can submit your code using 
+this Unix command command.
+</p>
+<p></p><xmp class="code">   cp MinMaxHeap.h MinMaxHeap.cpp Driver.cpp ~/cs341proj/proj4/
+</xmp>
+<p></p>
+
+
+      </div>
+      <div id="footer" class="donotprint">
+        <div>
+          <a href="http://userpages.umbc.edu/~chang/cs341.s17/index.shtml">CMSC 341 — Spring 2017 </a>
+        </div>
+        <a href="http://www.csee.umbc.edu/">CSEE</a> |
+        <a href="http://www.umbc.edu/">UMBC</a>
+      </div>
+    </div>
+
+
+
+</body></html>

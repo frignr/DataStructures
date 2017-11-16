@@ -1,0 +1,748 @@
+
+<!-- saved from url=(0063)http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1.shtml -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"> 
+   <title>
+      Project 1: Adjacency Lists,
+      CMSC 341 Spring 2017
+   </title> 
+   <link rel="shortcut icon" href="http://userpages.umbc.edu/~chang/cs341.s17/chang.ico">
+   <link rel="stylesheet" type="text/css" href="./Project 1_ Adjacency Lists, CMSC 341 Spring 2017_files/style-graph.css">
+</head> 
+
+<body> 
+    <div id="wrapper">
+      <div id="header">
+	<h1>CMSC 341 Data Structures — All Sections — Spring 2017</h1>
+        <div id="headerimg" class="donotprint"></div>
+	<div id="nav" class="donotprint">
+	  <ul>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/">Home</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/sections.shtml">Sections</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/syllabus.shtml">Syllabus</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/schedule.shtml">Schedule</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/homework/">Homework</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/">Projects</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/resources/">Resources</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/faq.shtml">FAQ</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/staff/">Staff</a></li>
+	  </ul>
+	</div>
+     </div>
+     <div id="content">
+
+<!-- END HEADER -->
+
+
+
+
+<h1>Project 1: Adjacency Lists</h1>
+
+<h2>Due: Tuesday, February 21, 8:59:59pm</h2>
+
+
+<hr>
+<h2>Addendum</h2>
+<p>
+<b>[Wednesday Feb 15, 22:35pm]</b> Fixed typo in <tt>operator!=</tt>.
+
+</p><p>
+<b>[Monday Feb 6, 9:50am]</b>  Changes in orange.
+</p><ul>
+<li> Added requirement to compile on GL. 
+</li><li> Added running time requirement for iterators.
+</li><li> Added running time requirement for <tt>addEdge()</tt>.
+</li><li> Clarified that <tt>addEdge()</tt> does not have to 
+check for duplicates.
+</li></ul>
+
+<hr>
+<h2>Objectives</h2>
+
+The objective of this programming assignment is to have you 
+review C++ programming using following features:
+object-oriented design, dynamic memory allocation, pointer
+manipulation, exceptions and nested classes.
+ 
+
+<hr>
+<h2>Introduction</h2> 
+
+<p> 
+In computer science and discrete mathematics, a <i>graph</i> is not a
+plot of <i>y = f(x)</i>. A graph has vertices and edges. Here's a simple
+example:
+
+</p><p></p><center>
+<img src="./Project 1_ Adjacency Lists, CMSC 341 Spring 2017_files/graph.jpg">
+</center><p></p>
+
+<p>
+The circles are the vertices and the edges are the lines between the
+vertices. (It is common to use the words "node" and "vertex"
+interchangeably, but for this project we will also have linked lists
+with nodes. So, we will only use "vertex" for graphs and reserve "node"
+for linked lists.)
+</p>
+
+<p>
+In the example above, the set of vertices is {0,1,2,3,4} and the set of
+edges is {(3,4), (4,1), (3,0), (0,4), (0,1), (2,1), (4,2)}. It is common
+to use the ordered pair notation (<i>u</i>, <i>v</i>) to represent an
+edge, but in an undirected graph, the edges are not ordered. Thus,
+(2,1) and (1,2) are the same edge.
+</p>
+
+<p>
+One common way to store a graph is using an adjacency list data
+structure. This data structure is just an array of linked lists. For
+example, the graph above can be stored as:
+</p>
+
+<p></p><center>
+<img src="./Project 1_ Adjacency Lists, CMSC 341 Spring 2017_files/adjacency_list_1.jpg">
+</center><p></p>
+
+<p>
+Here the first linked list, indexed by 0, has the <i>neighbors</i> of of
+vertex 0. The neighbors of a vertex <i>v</i> are the vertices in the
+graph that are connected to <i>v</i> by an edge. Vertices 1, 4 and 3 are
+the neighbors of vertex 0, so they go in the linked list indexed by 0.
+Similarly, vertices 2, 0 and 4 are the neighbors of vertex 1.
+</p>
+
+<p>
+Note that each edge is represented twice in this data structure. For
+example, edge (0,3) appears once as vertex 3 in the linked list for vertex 0
+and another time as vertex 0 in the linked list for vertex 3.
+</p><p>
+
+
+</p><hr>
+<h2>Assignment</h2>
+
+<p>
+Your assignment is to implement an adjacency list data structure
+<tt>Graph</tt> that is defined in the header file 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/Graph.h"><tt>Graph.h</tt></a>.
+The <tt>Graph</tt> class provides two iterators. One iterator 
+produces the neighbors for a given vertex. The second iterator
+produces each edge of the graph <i>once</i>.
+</p>
+
+<p>
+Additionally, you must implement a test program that fully exercises
+your implementation of the <tt>Graph</tt> member functions.
+Place this program in the <tt>main()</tt> function in a file named
+<tt>Driver.cpp</tt>.
+</p>
+
+<p>
+The purpose of an iterator is to provide programmers a uniform way to
+iterate through all items of a data structure using a <tt>for</tt> loop.
+For example, using the <tt>Graph</tt> class, we can iterate thru the
+neighbors of vertex 4 using:
+</p>
+
+<p></p><xmp class="code">   Graph::NbIterator nit ;
+
+   for (nit = G.nbBegin(4); nit != G.nbEnd(4) ; nit++) {
+      cout << *nit << " " ;
+   }
+   cout << endl ;
+</xmp><p></p>
+
+<p>
+The idea is that <tt>nit</tt> (for <b>n</b>eighbor <b>it</b>erator)
+starts at the beginning of the list for vertex 4 and is advanced to the
+next neighbor by the <tt>++</tt> operator. The <tt>for</tt> loop
+continues as long as we have not reached the end of the list. We check
+this by comparing against a special iterator for the end,
+<tt>nbEnd(4)</tt>. This requires the <tt>NbIterator</tt> class to
+implement the <tt>++</tt>, <tt>!=</tt> and <tt>*</tt> (dereference)
+operators.
+</p>
+
+<p>
+Similarly, the <tt>Graph</tt> class allows us to iterate through all
+edges of a graph using a <tt>for</tt> loop like:
+</p>
+
+<p></p><xmp class="code">   Graph::EgIterator eit ;
+   pair<int,int> edge ;
+
+   for (eit = G.egBegin() ; eit != G.egEnd() ; eit++) {
+      edge = *eit ;   // get current edge
+      cout << "(" << edge.first << ", " << edge.second << ") " ;
+   }
+   cout << endl ;
+</xmp><p></p>
+
+<p>
+Note that each edge is printed only once, even though it is represented
+twice in the adjacency list data structure.
+</p>
+
+<p>
+Since a program may use many data structures and each data structure
+might provide one or more iterators, it is common to make the iterator
+class for a data structure an inner class. Thus, in the code fragments
+above, <tt>nit</tt> and <tt>eit</tt> are declared as
+<tt>Graph::NbIterator</tt> and
+<tt>Graph::EgIterator</tt> objects, not just
+<tt>NbIterator</tt> and
+<tt>EgIterator</tt> objects.
+</p>
+
+<p>
+If you have not used nested class declarations before, here's an
+example:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/nested.cpp"><tt>nested.cpp</tt></a>
+and 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/nested.txt">sample output</a>.
+(For convenience, the class declarations and implementation are provided
+in one file, contrary to course coding standards.)
+</p>
+
+
+<hr>
+<h2>Specifications</h2>
+
+<p>
+Here are the specifics of the assignment, including a description for
+what each member function must accomplish.
+</p>
+
+<p>
+<b>Requirement:</b> other than the templated <tt>pair</tt> class, you
+must not use any classes from the Standard Template Library or other
+sources, including <tt>vector</tt> and <tt>list</tt>. All of the data
+structure must be implemented by your own code.
+</p> 
+
+<p>
+<b>Requirement:</b> your code must compile with the original
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/Graph.h"><tt>Graph.h</tt></a> header file.
+You are not allowed to make any changes to this file.
+Yes, this prevents you from having useful <tt>helper</tt> functions.
+This is a deliberate limitation of this project. You may have to
+duplicate some code.
+</p> 
+
+<p>
+<font color="orange">
+<b>Requirement:</b> per <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/coding-standards.shtml">our 
+course coding standards</a>, your code must compile with <tt>g++</tt>
+on the GL servers without using any compilation flags.
+</font>
+</p>
+
+<p>
+<font color="orange">
+<b>Requirement:</b> a program fragment with a <tt>for</tt> loop that
+uses your <tt>NbIterator</tt> must have worst case running time that is
+proportional to the number of neighbors of the given vertex. 
+</font>
+</p>
+
+<p>
+<font color="orange">
+<b>Requirement:</b> a program fragment with a <tt>for</tt> loop that
+uses your <tt>EgIterator</tt> must have worst case running time that is
+proportional to the number of vertices in the graph plus the number of
+edges in the graph. 
+</font>
+</p>
+
+<br><hr>
+<p>
+These are the member functions of the <tt>Graph</tt> class (not
+including the member functions of the inner classes).
+</p>
+
+<ul>
+
+<br><hr>
+<p></p><li> <xmp class="code">   Graph(int n) ;
+</xmp><p></p>
+
+<p>
+This is the constructor for the <tt>Graph</tt> class.
+The <tt>Graph</tt> class does not have a default constructor, because
+we want the programmer to specify the number of vertices in the graph
+using the parameter <tt>n</tt>. If the <tt>n</tt> given is zero or
+negative, throw an <tt>out_of_range</tt> exception.
+</p>
+<p>
+The constructor must dynamically allocate space for the adjacency list
+and allow edges to be added using <tt>addEdge()</tt>.
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   Graph(const Graph& G) ;
+</xmp><p></p>
+<p>
+This is the copy constructor for the <tt>Graph</tt> class. It should make a
+complete (deep) copy of the <tt>Graph</tt> object <tt>G</tt> given in the parameter. 
+The target of the copy is the host object.
+</p>
+<p>
+You should not call the assignment operator from the copy constructor
+(or vice versa). The objective of these two member functions are
+sufficiently different that you should implement them separately.
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   const Graph& operator= (const Graph& rhs) ;
+</xmp><p></p>
+<p>
+This is the overloaded assignment operator for the <tt>Graph</tt> class.
+It is called when the compiler sees an assignment like:
+</p>
+<xmp>   A = B ;
+</xmp>
+<p>
+where both <tt>A</tt> and <tt>B</tt> are <tt>Graph</tt> objects. The
+object <tt>A</tt> becomes the host object of the function and <tt>B</tt>
+is passed to the function as <tt>rhs</tt>.
+</p>
+<p>
+Remember to check for self-assignment and to free all dynamically
+allocated data members of the host. You should not use the copy
+constructor in the implementation of the assignment operator.
+</p>
+</li>
+
+
+<br><hr>
+<p></p><li> <xmp class="code">   ~Graph() ;
+</xmp><p></p>
+<p>
+This is the destructor for the <tt>Graph</tt> class. All dynamically allocated
+memory associated with the host object must be deallocated. You should
+use <tt>valgrind</tt> on GL to check for memory leaks.
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   int size() ;
+</xmp><p></p>
+<p>
+This function returns the number of vertices in the graph.
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   void addEdge(int u, int v) ;
+</xmp><p></p>
+<p>
+This function should add an edge between vertices <tt>u</tt> and
+<tt>v</tt>. Note that you have to add <tt>v</tt> to the linked list for
+<tt>u</tt> and you have to add <tt>u</tt> to the linked list for
+<tt>v</tt>. If the values for <tt>u</tt> and <tt>v</tt> are out of
+bounds, throw an <tt>out_of_range</tt> exception.
+</p>
+<font color="orange">
+<p>Your <tt>addEdge()</tt> function must run in constant time.
+</p>
+</font>
+<font color="orange">
+<p>You do not have to worry about duplicate edges being added. In
+computer science, graphs with multiple edges between the same pair of
+vertices is allowed in some situations. (They are called multi-graphs.) 
+The client programmers who use your <tt>Graph</tt> class must check for
+duplicate edges if they do not want to have duplicate edges in the
+graph.
+</p>
+</font>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   void dump() ;
+</xmp><p></p>
+<p>
+This member function is used for debugging. It should print out
+the linked lists in the adjacency lists for every vertex.
+See the sample outputs below for the suggested format of
+the output of the <tt>dump()</tt> function.  
+</p>
+<p>
+Note: you should <b>NOT</b> use the neighbor iterator in
+<tt>dump()</tt>, because <tt>dump()</tt> is supposed to help 
+you debug your program when the iterators are not working!
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   EgIterator egBegin() ;
+   EgIterator egEnd() ;
+</xmp><p></p>
+<p>
+These two functions call the <tt>EgIterator</tt> constructor to create
+iterators that can be used in <tt>for</tt> loops to iterate through
+the edges of the graph. (See example above.)
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   NbIterator nbBegin(int v) ;
+   NbIterator nbEnd(int v) ;
+</xmp><p></p>
+<p>
+These two functions call the <tt>NbIterator</tt> constructor to create
+iterators that can be used in <tt>for</tt> loops to iterate through the
+neighbors of vertex <tt>v</tt>. (See example above.)
+</p>
+</li>
+</ul>
+
+<br><br>
+<hr>
+
+<p>
+These are the member functions of the edge iterator class
+<tt>EgIterator</tt>:
+</p>
+
+<ul>
+<br><hr>
+<p></p><li> <xmp class="code">   EgIterator(Graph *Gptr = NULL, bool isEnd = false) ;
+</xmp><p></p>
+<p>
+This is the constructor for the <tt>EgIterator</tt> class. It is a
+default constructor, since each parameter has a default value. 
+The constructor should allow an <tt>EgIterator</tt> to be declared
+without any parameters.
+</p>
+<p>
+If <tt>isEnd</tt> is true, then the constructor should make an end
+iterator. This can be represented by having the <tt>m_source</tt> be 
+the number of vertices (which is larger than any vertex number) 
+and <tt>m_where</tt> be NULL.
+</p>
+<p>
+Otherwise, the constructor should put the iterator in a "good" state and
+have <tt>m_source</tt> and <tt>m_where</tt> indicate the first edge in
+the graph. (I.e., can be used for <tt>egBegin</tt>.)
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   bool operator!= (const EgIterator& rhs) ;
+</xmp><p></p>
+<p>
+This overloaded operator compares two <tt>EgIterator</tt> objects.
+It will only be used to compare an <tt>EgIterator</tt> against the end
+iterator and must return <s>true</s> <font color="orange">false</font>
+when the end is reached. All other uses are unspecified.
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">  void operator++(int dummy) ;
+</xmp><p></p>
+<p>
+The post increment <tt>++</tt> operator should advance the iterator to
+the next "viable" edge. The dummy parameter indicates this is a 
+post increment operator and not a preincrement operator. The dummy
+parameter is not actually used as a parameter.
+</p>
+<p>
+A simple way to make sure that each edge is only
+visited once by an <tt>EgIterator</tt> is to consider only those edges
+where the source vertex (the index of the array) is smaller than or
+equal to the vertex in the linked list. For example, if the iterator is
+currently located on the edge (2,4) in red below:
+</p>
+<p></p><center>
+<img src="./Project 1_ Adjacency Lists, CMSC 341 Spring 2017_files/adjacency_list_2.jpg">
+</center><p></p>
+<p>
+then the next viable edge is (3,4) in orange above. This is because we consider (2,1)
+and (3,0) not viable. These edges were already visited by the iterator
+as (1,2) and (0,3). So, we should skip over them when we see their
+alternative representation. Thus the <tt>++</tt> operator should figure
+out that <tt>m_source</tt> should become 3 and that <tt>m_where</tt>
+should point to the <tt>AdjListNode</tt> for vertex 4 in the linked list
+for vertex 3 (the orange node above).
+</p>
+<p>
+The <tt>++</tt> operator should have no effect if applied to an iterator
+that is already at the end.
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code">   std::pair<int,int> operator*() ;
+</xmp><p></p>
+<p>
+This is the overloaded dereference operator. It returns a pair of
+integers using the <tt>pair</tt> class from the standard library.
+The pair returned is the edge that the iterator is currently "visiting".
+Throw an <tt>out_of_range</tt> exception if the dereference operator is
+applied to an iterator that has reached the end.
+See Implementation Notes below for further comments.
+</p>
+
+</li></ul>
+
+<br><br>
+<hr>
+<p>
+These are the member functions of the neighbor iterator class
+<tt>NbIterator</tt>. They are analogous to the functions for
+<tt>EgIterator</tt>.
+</p>
+
+<ul>
+
+<br><hr>
+<p></p><li> <xmp class="code">  NbIterator(Graph *Gptr = NULL, int v = -1, bool isEnd = false) ;
+</xmp><p></p>
+<p>
+This is the constructor and default constructor. The constructor should
+allow the creation of an <tt>NbIterator</tt> object without any
+parameters given.
+</p>
+<p>
+If <tt>isEnd</tt> is true, then object created should be an end
+iterator.
+</p>
+<p>
+The parameter <tt>v</tt> indicates that we want to iterate over the
+neighbors of <tt>v</tt>.
+</p>
+
+<br><hr>
+<p></p></li><li> <xmp class="code">   bool operator!= (const NbIterator& rhs) ;
+</xmp><p></p>
+<p>
+As before, the only intended use of the <tt>!=</tt> operator is to
+compare an <tt>NbIterator</tt> object against the end iterator.
+</p>
+
+<br><hr>
+<p></p></li><li> <xmp class="code">   void operator++(int dummy) ;
+</xmp><p></p>
+<p>
+The <tt>++</tt> operator advances the iterator to the next neighbor of
+<tt>m_source</tt>. All <i>neighbors</i> are viable, so this <tt>++</tt>
+operator should be simpler to implement than the one for
+<tt>EgIterator</tt>.
+</p>
+<p>
+The <tt>++</tt> operator should have no effect if applied to an iterator
+that is already at the end.
+</p>
+
+
+<br><hr>
+<p></p></li><li> <xmp class="code">   int operator*() ; 
+</xmp><p></p>
+<p>
+This dereference operator should return the neighbor that the iterator is
+currently "visiting". Throw an <tt>out_of_range</tt> exception if the
+dereference operator is applied to an iterator that has reached the end.
+</p>
+</li></ul>
+
+
+<hr>
+<h2>Test Programs</h2> 
+
+<p>
+The following test programs may be used to check the compatibility
+of your implementation. These programs do not check the
+<i>correctness</i> of your implementation.  Even if your implementation
+compiles and runs correctly with these programs, it does not mean your
+implementation is error-free.  Grading will be done using programs that
+exercise your implementation much more thoroughly.  You must do the
+testing yourself --- testing is part of programming.  Conversely, if
+your implementation does <i>not</i> compile or does <i>not</i> run
+correctly with these test programs, then it is unlikely that it will
+compile or run correctly with the grading programs.
+</p>
+
+<ul>
+<li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/test1.cpp"><tt>test1.cpp</tt></a>
+</li><li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/test1.txt"><tt>test1.txt</tt></a> (sample output)
+</li><li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/test1v.txt"><tt>test1v.txt</tt></a> (sample
+output with <tt>valgrind</tt>)
+</li><li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/test2.cpp"><tt>test2.cpp</tt></a>
+</li><li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/test2.txt"><tt>test2.txt</tt></a> (sample output) 
+</li><li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj1files/test2v.txt"><tt>test2v.txt</tt></a> (sample
+output with valgrind) 
+</li></ul>
+
+<p>
+These files are also available on GL in the directory:
+</p><xmp>   /afs/umbc.edu/users/c/h/chang/pub/www/cs341.s17/projects/proj1files/
+</xmp>
+<p></p>
+
+
+<hr>
+<h2>Implementation Notes</h2> 
+
+<ul>
+<li> Approach this assignment using incremental development. Implement
+the <tt>Graph</tt> constructor, <tt>addEdge()</tt> and <tt>dump()</tt>
+functions first. Then write a driver program that creates a graph, adds a few
+edges and calls <tt>dump()</tt>. When you have debugged these functions,
+implement the <tt>NbIterator</tt> class (it's easier). When you have those
+functions fully debugged, then implement the <tt>EgIterator</tt> class.
+</li>
+
+<li> The <tt>EgIterator</tt> and <tt>NbIterator</tt> classes do not
+need destructors, copy constructors or overloaded assignment operators
+because they do not have any dynamically allocated data members. The
+compiler supplied destructor, copy constructor and assignment operator
+will do the right thing.
+</li>
+
+<li> Graphs are allowed to have vertices that do not have any edges.
+The <tt>EgIterator</tt> constructor should work correctly even if vertex
+0, 1, 2 ... have empty adjacency lists. Similarly, the <tt>++</tt>
+operator for the <tt>EgIterator</tt> should be able to handle empty
+adjacency lists.
+</li>
+
+<li> If you are still confused about what an iterator is supposed to do,
+consider this implementation of the dereference operator for
+<tt>NbIterator</tt>:
+<p></p><xmp>   int Graph::NbIterator::operator*() {
+      if (m_where == NULL) {
+	 throw out_of_range("NbIterator dereference error.") ;
+      }
+     
+      return m_where->m_vertex ;
+   }
+</xmp><p></p>
+<p>
+The main purpose of an iterator is to give a programmer
+using the <tt>Graph</tt> class access to the neighbors 
+of a vertex. The dereference operator is where the rubber meets the
+road. When you dereference the iterator, you get an actual neighbor
+vertex. That means the iterator should always be in a state where
+dereferencing gives you the current neighbor vertex (unless you have
+reached the end). That tells you what
+<tt>nbBegin()</tt> and the <tt>++</tt> operator has to do. 
+The <tt>nbBegin()</tt> object must put <tt>m_where</tt> over the
+first neighbor. The <tt>++</tt> operator must advance the iterator to
+the next neighbor.
+</p>
+<p>
+The dereference operator for the <tt>EgIterator</tt> is similar:
+</p>
+<p></p><xmp>   std::pair<int,int> Graph::EgIterator::operator*() {
+
+      if (m_where == NULL) {
+	 throw out_of_range("EgIterator dereference error.") ;
+      }
+
+      return std::pair<int,int>(m_source, m_where->m_vertex) ;
+   }
+</xmp><p></p>
+<p>
+In order for this dereference operator to work, the <tt>EgIterator</tt>
+member functions and operators must set the <tt>m_source</tt> and
+<tt>m_where</tt> data members correctly. Look at the example adjacency
+list above. Now think about what the data members of the iterators
+should hold as you advance through the linked list using the <tt>++</tt>
+operator. Think about what happens after <tt>++</tt> is applied to an
+iterator visiting the last viable edge in the graph.
+</p>
+</li>
+
+<li>
+<p>
+The reason that <tt>egBegin()</tt> and <tt>nbBegin()</tt> are members of
+<tt>Graph</tt> rather than the iterator classes is that the iterators
+have to be told which graph they are working with. Since 
+<tt>egBegin()</tt> and <tt>nbBegin()</tt> are members of <tt>Graph</tt>, they
+can give their host pointers (the <tt>this</tt> pointer) to the iterator
+constructors.
+</p>
+
+</li><li>
+<p>
+The "normal" iterator constructors (not creating the end iterator or the
+empty iterator) should create an iterator compatible with
+<tt>egBegin()</tt> and <tt>nbBegin()</tt>.
+</p>
+
+</li><li>
+<p>
+There is a certain amount of inefficiency inherent in the <tt>for</tt>
+loop idiom:
+</p>
+<p></p><xmp>   Graph::EgIterator eit ;
+   for (eit = G.egBegin() ; eit != G.egEnd() ; eit++) {
+      ...
+   }
+</xmp><p></p>
+<p>
+because we create an iterator with <tt>egBegin()</tt> just to assign it
+to <tt>eit</tt>. Also, we create an end iterator for each iteration
+using <tt>egEnd()</tt> just so we can compare it to <tt>eit</tt>.
+</p>
+
+</li><li> 
+<p>
+Test your programs for memory leaks (dynamically allocated memory
+that was never released) using valgrind. The valgrind command is
+available on GL. Just compile your test program and run:
+</p><xmp class="code">   valgrind ./Driver.out
+</xmp>
+This is assuming that your executable file is named <tt>Driver.out</tt>.
+If that run did not leak memory, the output from valgrind will say:
+<xmp class="code">   All heap blocks were freed -- no leaks are possible
+</xmp>
+As usual, the fact that a single run of your implementation did not
+leak memory does not mean that it will never leak memory.
+</li>
+
+</ul>
+
+
+<hr>
+<h2>What to Submit</h2>
+
+<p>
+You must submit the following files to the <tt>proj1</tt> directory.
+</p>
+<ul>
+<li> <tt>Graph.cpp</tt>
+</li><li> <tt>Driver.cpp</tt>
+</li></ul>
+<p>
+You do not need to submit <tt>Graph.h</tt> because it should not have
+changed. If you do happen to place a copy of <tt>Graph.h</tt> in your
+submission directory, it will be replaced by a copy of the original
+version.
+</p>
+<p>
+If you followed the instructions in the 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/submission.shtml">Project Submission</a> 
+page to set up your directories, you can submit your code using 
+this Unix command command.
+</p>
+<p></p><xmp class="code">   cp Graph.cpp Driver.cpp ~/cs341proj/proj1/
+</xmp>
+<p></p>
+
+
+      </div>
+      <div id="footer" class="donotprint">
+        <div>
+          <a href="http://userpages.umbc.edu/~chang/cs341.s17/index.shtml">CMSC 341 — Spring 2017 </a>
+        </div>
+        <a href="http://www.csee.umbc.edu/">CSEE</a> |
+        <a href="http://www.umbc.edu/">UMBC</a>
+      </div>
+    </div>
+
+
+
+</body></html>

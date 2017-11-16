@@ -1,0 +1,907 @@
+
+<!-- saved from url=(0063)http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5.shtml -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"> 
+   <title>
+      Project 5: Incremental Rehash,
+      CMSC 341 Spring 2017
+   </title> 
+   <link rel="shortcut icon" href="http://userpages.umbc.edu/~chang/cs341.s17/chang.ico">
+   <link rel="stylesheet" type="text/css" href="./Project 5_ Incremental Rehash, CMSC 341 Spring 2017_files/style-graph.css">
+</head> 
+
+<body> 
+    <div id="wrapper">
+      <div id="header">
+	<h1>CMSC 341 Data Structures — All Sections — Spring 2017</h1>
+        <div id="headerimg" class="donotprint"></div>
+	<div id="nav" class="donotprint">
+	  <ul>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/">Home</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/sections.shtml">Sections</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/syllabus.shtml">Syllabus</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/schedule.shtml">Schedule</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/homework/">Homework</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/">Projects</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/resources/">Resources</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/faq.shtml">FAQ</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/staff/">Staff</a></li>
+	  </ul>
+	</div>
+     </div>
+     <div id="content">
+
+<!-- END HEADER -->
+
+
+
+
+<h1>Project 5: Incremental Rehash</h1>
+
+<h2>Due: Tuesday, May 16, 8:59:59pm</h2>
+
+<hr>
+<h2>Addenda</h2>
+<ul>
+  <li> <b>[Thu 5/11/17 14:35]</b> 
+  Changed the comments in <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test3.cpp"><tt>test3.cpp</tt></a>
+  that indicated the slots where <tt>"heliosphere"</tt>, <tt>"obstructs"</tt> and
+  <tt>"peripatetic"</tt> would end up in the new table. (Should be 72,
+  73 and 77 instead of 71, 72 and 73.)
+
+  </li><li> <b>[Mon 5/8/17 09:25]</b> 
+  <br>
+  <b>Question:</b> After incremental
+  rehashing has started, when do clusters move from the old table to the
+  new table?
+  <br>
+  <b>Answer:</b> Whenever you "touch" a string in the old table, the cluster it
+  belongs to should move to the new table. The idea here is that we want
+  to migrate strings from the old table to the new table as much as
+  possible without running down the old table looking for them. (We
+  do that for the final 3%, but that's unavoidable.) So, if you happen
+  to see a string in the old table, you should go ahead and move the
+  cluster that it is part of to the new table. We move clusters and not
+  individual strings, because moving an individual string from the old
+  table would break the linear probe searching (and we do still need to
+  search in the old table).
+  <br>
+  In the example with table size 137 given below, after rehashing has 
+  started, suppose someone calls <tt>remove("trolley")</tt>.
+  Since <tt>"trolley"</tt> is not in the data structure at all,
+  you have to look for <tt>"trolley"</tt> in both the new table and
+  the old table. With a table of size 137, <tt>"trolley"</tt> 
+  hashes to slot 98. You have to probe slots 98, 99 and 100 of the old
+  table to determine that <tt>"trolley"</tt> is, in fact, not in the
+  table. Even though the search is unsuccessful, you still did find
+  some strings in the old table, so you should move the cluster
+  consisting of 
+  <tt>"abdominal"</tt>,
+  <tt>"abhor"</tt>,
+  <tt>"abasement"</tt> and
+  <tt>"abhorrent"</tt> 
+  in slots 96 through 99 from the old table to the new table.
+
+  </li><li> <b>[Mon 5/8/17 09:25]</b> 
+  Common bugs seen so far: forgetting to update the number of items
+  after inserting or removing a string, taking modulo of number of
+  items instead of table capacity, using the capacity of the wrong
+  table, trying to <tt>strdup(DELETED)</tt>, trying to use
+  <tt>DELETED</tt> as a string, forgetting to intialize the entries
+  of a new table to <tt>NULL</tt>. In other words, run of the mill bugs.
+  Let's be careful out there.
+
+
+  </li><li> <b>[Sun 5/7/17 20:10]</b> Test programs posted.
+
+  </li><li> <b>[Thu 5/4/17 14:00]</b> Correction on the syntax for the 
+  DELETED. The class definition in the <tt>.h</tt> file should look like:
+  <xmp>
+     class HashTable {
+       
+        static char * const DELETED ;
+
+     } ;
+  </xmp>
+  This has to be initialized in the <tt>.cpp</tt> file:
+  <xmp>
+  char * const HashTable::DELETED  = (char *) 1 ;
+  </xmp>
+  Note the change in the positioning of the keyword <tt>const</tt>.
+
+
+  </li><li> <b>[Wed 5/3/17 09:15]</b> <tt>const</tt> has been removed from
+  the parameters of the copy constructor and assignment operator, 
+  since the <tt>HashTable</tt> object in the parameter will
+  be asked to finish incremental rehashing. The alternative is
+  to make most of the data members mutable, but that is too cumbersome.
+
+  </li><li> <b>[Mon 5/1/17 16:30]</b> We usually prefer not to be too
+  specific about implementation details that do not affect the
+  performance of a data structure, but in order to prevent a bunch of
+  questions and also to make grading easier, let's be really specific
+  about the length of a linear probe. Suppose a string <i>x</i>
+  hashes to index 67:
+  <ul>
+     <li> If <i>x</i> is inserted in slot 75, the probe length is 
+     9 and this does not trigger a rehash. If <i>x</i> is inserted
+     in slot 76, then the probe length is 10 and a rehash would be
+     triggered. The current cluster that contains slot 76 should be moved
+     to the new hash table immediately.
+
+     </li><li> If <i>x</i> is found in slot 75 by a find operation, 
+     the probe length is 9 and we do not rehash. If <i>x</i> is found
+     in slot 76, then we do start a rehash.  The current cluster that 
+     contains slot 76 should be moved to the new hash table immediately.
+
+     </li><li> The remove operation is the same as the find operation,
+     since we have to look for an item before we can remove it.
+     The slot marked <tt>DELETED</tt> is still part of the cluster,
+     there is no item to insert in the new table, but the deleted
+     slot joins the slots before it and the slots after it into
+     one cluster. This cluster should be moved immediately after
+     the deletion, if a rehash is triggered during the operation.
+  </li></ul>
+  Let's be similarly specific about checking the load factor. First of
+  all, the table size is prime and &gt;100, so must be odd. We at least
+  do not have to worry about the &gt;= 50% vs &gt; 50% question.
+  We should check the load factor at the beginning of every insert, find and
+  remove operation.  For insert, this makes sense because if we are 
+  going to rehash due to a load factor exceeding 0.5, then we
+  want to start inserting in the new hash table right away.
+  For find and remove, checking the load factor first, and triggering
+  the rehash if needed also clarifies what you are supposed to do with
+  the cluster you find in the operation. If you are already in rehash mode,
+  yes, you should move that cluster to the new table. Also, since
+  the load factor is being checked before we do the insert and remove,
+  we don't take into account of the size change from the insert and
+  remove when we check the load factor.
+
+  <p>
+  As stated previously, these stipulations do not really affect the
+  performance of the data structure. It just makes grading easier. It is
+  also just easier to say, "Check the load factor before you do anything
+  with insert."
+
+
+  </p></li><li> <b>[Mon 5/1/17 16:10]</b> Clarified that checking the smallest
+  table size we want to consider is 101.
+  
+  </li><li> <b>[Mon 5/1/17 14:50]</b> Clarified that checking whether the
+  old heap has less than 3% of the items should be done at the
+  <b>beginning</b> of each insert, find and remove operation. (It doesn't
+  really matter, but this avoids a bunch of questions.)
+
+  </li><li> <b>[Mon 5/1/17 13:06]</b> Added warning about negative numbers
+  and the modulo operator in Implementation Notes.
+</li></ul>
+<span style="color:orange;"><i>Additions and changes are highlighted in
+orange throughout.</i></span>
+
+
+<hr>
+<h2>Objectives</h2>
+
+The objective of this programming assignment is to have you 
+practice implementing a hash table.
+ 
+<hr>
+<h2> Background </h2> 
+
+<p>
+Your micro-manager of a boss from Project 4 found you out. Somehow he
+figured out that you did not implement <i>real</i> min-max heaps for him.
+After some verbal reprimand, somehow you got to keep your job.
+For your next assignment, your boss says, "You will implement the data
+structure EXACTLY as I specify!"
+</p>
+
+<p>
+Your next assignment is to implement a hash table for strings. Your boss
+says you must use open addressing, linear probing and the division
+method. He even gives you the function to compute the hashcode of a string:
+
+</p><p></p><xmp class="code">unsigned int hashCode(const char *str) {
+
+   unsigned int val = 0 ;
+   const unsigned int thirtyThree = 33 ;  // magic number from textbook
+
+   int i = 0 ;
+   while (str[i] != '\0') {
+      val = val * thirtyThree + str[i] ;
+      i++ ;
+   }
+   return val ;
+}
+</xmp><p></p>
+<p></p>
+
+<p>
+Really?? Linear probing? Doesn't he know that linear probing is
+vulnerable to primary clustering? You decide that you will follow your
+boss's instructions, but you will nevertheless add your own
+optimizations.
+</p>
+
+<p>
+When a hash table is "full" or has too many collisions, a last resort is
+to <i>rehash</i>. When you rehash, you construct another hash table and
+insert every item in the old hash table into the new hash table. The new
+hash table might be bigger and could use a different hash function. The
+hope is that you were just "unlucky" with collisions and that the new
+hash table will not have as many.
+</p>
+
+<p>
+Rehashing is very expensive in terms of running time since you have to
+re-insert every item from the old hash table into the new hash table.
+Alternatively, you can rehash <i>incrementally</i> and not move the items
+all at once. Incremental rehashing will not lower the overall running
+time of rehashing, but it will prevent your program from stalling (think
+spinning beach balls) while a hash table is being copied.
+During an incremental rehash, there are two hash tables
+in the data structure: the old hash table and the new hash table. When
+you insert a new string, you insert it in the new hash table. When you 
+search for a string, the string may be in either the old hash table or
+the new hash table. You have to look in both. Similarly, a remove
+operation will have to look in both tables and remove the item from the
+appropriate one. During the incremental rehash phase, every operation
+(i.e., insert, find and remove) will also move a few items from the old
+table to the new table. After a number of operations, most of the items
+will have migrated to the new table. The stragglers in the old table
+will be moved to the new table and the old table can be discarded.
+</p>
+
+
+<hr>
+<h2>Your Assignment</h2>
+
+<p>
+Your assignment is to implement a hash table data structure that uses
+incremental rehashing as described above. 
+</p>
+
+<p>Rehashing is triggered in two ways. First, if the load factor of the
+table exceeds 0.5 (i.e., more than half of the hash slots are filled), your data
+structure should begin the incremental rehashing. Second, if linear
+probing during an insert, find or remove operation encounters more than
+10 hash slots, then you should also initiate the incremental rehashing. 
+The new hash table should have a size that brings the load factor to
+0.25 if all of the elements of the old table were moved to the new table
+at once. That is, the size of the new table should be approximately four
+times the number of items in the old table when the incremental hashing
+is triggered. If incremental rehashing was triggered because by a long
+linear probe, the new table might actually be smaller than the old
+table. In any case, the new table size must be prime, and the new table
+size must be different from the old table size.
+<span style="color: orange;">
+We will also keep our table sizes between 101 and 199,999 for this
+project.
+</span>
+</p>
+
+<p> 
+Instead of moving individual items from the old table to the new table,
+you will move clusters.  These are contiguous hash slots that are
+occupied by items. Clusters are bad for linear probing because they
+lengthen the running time for a search. (We do not know that an item is
+not in the hash table until we have reached the end of the cluster.)
+Also, large clusters tend to get larger because the probability that a
+new item hashes to a slot in a cluster increases with the size of a
+cluster. Thus, when incremental rehashing has been triggered, every time
+a slot <i>t</i> in the old table is accessed (during insert, find or
+remove), we
+will rehash the cluster in the old hash table surrounding <i>t</i>.
+</p>
+
+<p>
+For example, the following is a part of the dump from a hash table with
+size 137. The numbers in the parentheses after each word is the 
+hash index of the word.  The words in slots 67 through 87 form a cluster.
+If we did a search for <tt>"aberdeen"</tt>, which hashes to slot 68, we
+won't find the word in the linear probing until we reach slot 80. This
+will trigger the incremental rehashing since the linear probing had to
+examine more than 10 slots to find <tt>"aberdeen"</tt>. Thus, every item
+in the cluster from slot 67 through 87 will be moved to the new table.
+Note that there are items in the cluster <i>before</i> slot 68 where
+<tt>"aberdeen"</tt> hashed to. Also, in the linear probing scheme, when
+an item is deleted, the slot it occupied is marked as deleted rather than emptied
+(otherwise linear probing won't work for later searches). So, the
+cluster also includes deleted slots, but obviously there is no item to
+move to the new table for that slot. Subsequently, if we do search on
+<tt>"abbreviation"</tt> then the cluster in slots 89 through 91 will be
+moved to the new table.
+</p>
+
+<p>
+</p><xmp class="code">
+H[ 60] = 
+H[ 61] = 
+H[ 62] = abeam (62)
+H[ 63] = 
+H[ 64] = 
+H[ 65] = 
+H[ 66] = 
+H[ 67] = abbreviated (67)
+H[ 68] = abductors (67)
+H[ 69] = abattoir (69)
+H[ 70] = aardwolf (70)
+H[ 71] = abated (70)
+H[ 72] = abatement (71)
+H[ 73] = abbeys (71)
+H[ 74] = abalone (74)
+H[ 75] = abandons (75)
+H[ 76] = abdicates (69)
+H[ 77] = abased (77)
+H[ 78] = DELETED
+H[ 79] = abel (76)
+H[ 80] = aberdeen (68)
+H[ 81] = abhorred (67)
+H[ 82] = abbreviates (82)
+H[ 83] = abducts (82)
+H[ 84] = abducted (84)
+H[ 85] = abates (85)
+H[ 86] = abet (84)
+H[ 87] = abhorrence (78)
+H[ 88] = 
+H[ 89] = abdomens (89)
+H[ 90] = abbey (90)
+H[ 91] = abbreviation (90)
+H[ 92] = 
+H[ 93] = 
+H[ 94] = 
+H[ 95] = 
+H[ 96] = abdominal (96)
+H[ 97] = abhor (97)
+H[ 98] = abasement (98)
+H[ 99] = abhorrent (96)
+H[100] = 
+</xmp>
+<p></p>
+
+<p>
+Note that in the example above, if we have not entered incremental
+rehashing and we did a search for <tt>"abel"</tt>, this would not
+trigger an incremental rehash because <tt>"abel"</tt> hashes to index 76
+and we found it in slot 79. The linear probing looked at only 4 slots.
+That is, incremental rehashing is not triggered by the <i>existence</i>
+of large clusters — it is triggered when we <i>encounter</i> a
+long linear probe sequence.
+</p>
+
+<p>
+When there is an ongoing rehash, we must also check if the number of
+items in the old table has dropped below 3% of the total number of items
+in the data structure. If that is the case, then we should wrap up the
+rehashing and copy all of the remaining items in the old hash table to
+the new hash table. The old hash table can then be discarded and we
+will exit from the "rehash mode". This check should be done 
+<span style="color:orange;"> at the beginning of every </span>
+insert, find and remove operation.
+</p>
+
+<p>
+Finally, what should we do if during an incremental rehash, the load
+factor of the new table exceeds 0.5? or if there is a long linear 
+probe in the new table? Then, we throw up our hands and give up on
+incremental rehashing. We make a third table that has a table size about
+4 times the total number of items in the old and new tables, and move 
+all of the items into the third table at once.
+</p>
+
+<br>
+<hr>
+<h2>Requirements</h2>
+
+<p> You must design and implement a C++ class <tt>HashTable</tt> that
+uses the incremental rehashing scheme as described above. 
+The following are some firm requirements (i.e., necessary for grading):
+
+</p><ul>
+<p></p><li> The name of your class must be <tt>HashTable</tt>. 
+<p></p></li><li> You must use <tt>HashTable.h</tt> and <tt>HashTable.cpp</tt>
+for the filenames (case sensitive) of your header and implementation
+files.
+<p></p></li><li> You must use the <tt>hashCode()</tt> function given above.
+<p></p></li><li> You must use open addressing and linear probing.
+<p></p></li><li> You must use the division method where hash index is the value returned
+by <tt>hashCode()</tt> modulo the table size.
+<p></p></li><li> Your table sizes must be prime numbers.
+<p></p></li><li> You may not use STL classes, not even <tt>string</tt>.
+<p></p></li><li> You must dynamically allocate arrays of type <tt>char *</tt> to
+hold your C strings. I.e., the declaration of your table should be
+something like:
+<xmp>   char ** H ;
+</xmp>
+<p></p></li><li> Your program must not leak memory.
+</li></ul>
+
+<p>
+We will be hashing strings. The strings are given in a global array
+<tt>words[]</tt>. None of the member functions in your implementation of
+the <tt>HashTable</tt> class should use this global array. The driver
+programs should be the only code that uses the <tt>words[]</tt> array.
+The global variable <tt>numWords</tt> has the size of the
+<tt>words[]</tt> array.
+
+</p><xmp class="code">
+#ifndef _WORDS_H_
+#define _WORDS_H_
+
+const int numWords = 58109 ;
+
+const char *words[numWords] = {
+"aardvark",
+"aardwolf",
+"aaron",
+"aback",
+"abacus",
+"abaft",
+"abalone",
+"abandon",
+"abandoned",
+"abandonment",
+"abandons",
+.
+.
+.
+"zoomed",
+"zooming",
+"zooms",
+"zooplankton",
+"zoos",
+"zulu",
+"zulus"
+} ;
+
+#endif
+</xmp>
+<p>
+Download: <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/words.h"><tt>words.h</tt></a>.
+</p>
+
+<p>
+Note that the items in the <tt>words[]</tt> array are <tt>const char
+*</tt> strings and not C++ strings. 
+When you store a string in your hash table
+you should make a copy of the given string.
+</p>
+
+<p>
+Similarly, there is an array of prime numbers between 100 and 200,000
+in the <tt>primes.h</tt> file. You should use binary search in the
+<tt>primes[]</tt> array to find a prime number for your table size.
+If, during rehashing, you have to create a table with more than 199,999
+items, then just give up and throw an <tt>out_of_range</tt> exception.
+</p>
+<xmp class="code">
+const int numPrimes = 17959 ;
+
+const int primes[numPrimes] = {
+101,
+103,
+107,
+109,
+113,
+127,
+131,
+137,
+139,
+149,
+151,
+157,
+.
+.
+.
+
+199873,
+199877,
+199889,
+199909,
+199921,
+199931,
+199933,
+199961,
+199967,
+199999
+} ;
+</xmp>
+<p></p>
+
+<p>
+Download: <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/primes.h"><tt>primes.h</tt></a>.
+</p>
+
+<br>
+<hr>
+<a name="specs">
+<h2>Additional Specifications</h2>
+</a>
+
+<p>
+Here are some additional specifications for the 
+<tt>HashTable</tt> class member functions that you have to implement.  
+You will definitely want to add other data members and member functions to the
+<tt>HashTable</tt> class, but the prototypes for the member functions
+listed here should not be changed.  You may create additional classes
+if you prefer, but all class declarations should be placed in
+<tt>HashTable.h</tt> and all implementations should be placed in
+<tt>HashTable.cpp</tt>.
+</p>
+
+<ul>
+
+<br><hr>
+<p></p><li> <xmp class="code">   HashTable(int n=101) ;
+</xmp>
+
+<p>
+This is the default constructor for the <tt>HashTable</tt> class.
+The parameter <tt>n</tt> is the requested size of the hash table.
+<span style="color:orange;">
+If no size is given or if <tt>n</tt> is less than 101, then use the
+prime number 101 for the table size.  (I.e., the minimum table size is
+101.)
+</span>
+If the requested size is a prime number
+<span style="color:orange;">greater than 100</span>, 
+then you should use that size for the table size. 
+If the requested size is not a prime number, 
+you should use the next highest prime number from <tt>primes.h</tt>.
+If the requested size exceeds 199,999, then just give up and throw an
+<tt>out_of_range</tt> exception.
+The <tt>HashTable</tt> object created by the constructor should be ready
+for insertion, search and deletion without any additional
+initialization.
+</p>
+</li>
+
+<br><hr>
+<p></p><li> <xmp class="code"> ~HashTable() ;
+</xmp>
+<p>
+This is the destructor. Make sure you deallocate all memory for this
+object. The strings in the hash table must be
+deallocated using <tt>free()</tt> since they are C strings (i.e., don't
+use <tt>remove</tt> for C strings).
+</p>
+
+<br><hr>
+<p></p></li><li> <xmp class="code"> HashTable (HashTable& other) ;
+</xmp>
+<p>
+This is the copy constructor for the <tt>HashTable</tt> class. If the
+<tt>other</tt> hash table is not in incremental rehash, then copying the
+hash table is very straightforward. Just make sure you allocate memory
+for the new hash table and use <tt>strdup()</tt> to copy the strings.
+</p>
+<p>
+On the other hand, if the <tt>other</tt> hash table has an ongoing
+rehash, then it doesn't make sense to make a duplicate of a hash table
+that is in the middle of being copied. Instead, force the <tt>other</tt>
+table to finish its rehashing and copy over the resulting single table.
+</p>
+<p>
+Do not call the assignment operator from the copy constructor. If you do
+not want to have duplicate code, then create a third function that handles
+the common parts of the both functions.
+</p>
+
+<br><hr>
+<p></p></li><li> <xmp class="code"> const HashTable& operator= (HashTable& rhs) ;
+</xmp>
+<p>
+This is the overloaded assignment operator for the <tt>HashTable</tt>
+class. As with the copy constructor, the process is fairly standard if
+the <tt>rhs</tt> does not have an ongoing incremental rehash. If there
+is an ongoing rehash, then force the <tt>rhs</tt> to finish its
+rehashing and copy over the resulting single hash table.
+</p>
+
+<br><hr>
+<p></p></li><li> <xmp class="code">   void insert(const char *str) ;
+</xmp>
+<p>
+This function inserts a copy of the C string <tt>str</tt> into the hash
+table. It has no return value. (Note: use <tt>strdup()</tt> to copy C strings.)
+</p>
+<p>
+The <tt>insert()</tt> function should insert in the new table if
+there is an ongoing incremental rehash.
+</p>
+<p>
+Calling <tt>insert()</tt> with a string that is already in the hash
+table should have no effect. (I.e., do not insert a second copy of the
+same value.) Make sure you don't have a copy of a string that you didn't
+insert floating around. That's a memory leak.
+</p>
+<p>
+The <tt>insert()</tt> function should trigger incremental rehashing when 
+appropriate as described above.
+The <tt>insert()</tt> operation should also wrap up the incremental rehashing
+if the number of items in the old table drops below 3%.
+</p>
+
+<br><hr>
+<p></p></li><li> <xmp class="code">   bool find(const char *str) ;
+</xmp>
+<p>
+The <tt>find()</tt> function looks for <tt>str</tt> in the hash table.
+The function returns <tt>true</tt> if found, <tt>false</tt> otherwise.
+The <tt>find()</tt> function look in both the old and the new hash
+tables if there is an ongoing incremental rehashing.
+</p>
+<p>
+The <tt>find()</tt> function should trigger incremental rehashing when 
+appropriate as described above.
+The <tt>find()</tt> operation should also wrap up the incremental rehashing
+if the number of items in the old table drops below 3%.
+</p>
+
+
+<br><hr>
+<p></p></li><li> <xmp class="code">   char * remove(const char *str) ;
+</xmp>
+<p>
+The <tt>remove()</tt> function removes <tt>str</tt> from the hash table
+and returns the pointer. If <tt>str</tt> is not in the hash table,
+<tt>remove()</tt> returns NULL.
+</p>
+<p>
+It is the responsibility of the code that calls <tt>remove()</tt> to
+deallocate the string that is returned. (Again, use <tt>free()</tt>,
+not <tt>delete</tt> to deallocate.)
+</p>
+<p>
+When an item is removed, the slot it occupied should be marked as
+deleted and not set to <tt>NULL</tt>, which would break linear probing.
+<span style="color:orange;">
+Use the declaration in your <tt>HashTable</tt> class:
+</span>
+</p>
+<xmp style="color:orange;">   static char * const DELETED ;
+</xmp>
+<p style="color:orange;">Then in the .cpp file, initialize with:
+</p>
+<xmp style="color:orange;">    char * const HashTable::DELETED  = (char *) 1 ;
+</xmp>
+<p>
+The constant <tt>DELETED</tt> can then be stored in your hash table slot.
+This assumes that memory address 1 is never returned by the memory
+manager. (That's a pretty safe assumption.)
+</p>
+
+<p>
+The <tt>remove()</tt> function should trigger incremental rehashing when 
+appropriate as described above.
+The <tt>remove()</tt> operation should also wrap up the incremental rehashing
+if the number of items in the old table drops below 3%.
+</p>
+
+
+<br><hr>
+<p></p>
+
+<br><hr>
+<p></p></li><li> <xmp class="code">   bool isRehashing() ;
+   int tableSize(int table=0) ;
+   int size(int table=0) ;
+   const char * at(int index, int table=0) ;
+</xmp>
+<p>
+These functions are used for grading purposes, so we can examine your hash
+table(s). The <tt>isRehashing()</tt> function returns <tt>true</tt> if
+there is an ongoing incremental rehash. The <tt>tableSize()</tt>
+function returns the size of the hash table. When there is an ongoing
+rehash, <tt>tableSize(0)</tt> should return the size of the old table
+and <tt>tableSize(1)</tt> should return the size of the new table.
+Similarly, <tt>size()</tt> returns the number of items currently in the
+table(s).
+</p>
+
+<p>
+The <tt>at()</tt> function returns a pointer to the string stored at 
+the <tt>index</tt> slot of the hash table specified by <tt>table</tt>.
+If the <tt>index</tt> is invalid (i.e., less
+than 0 or greater than or equal to table size), then
+<tt>at()</tt> should throw an <tt>out_of_range</tt> exception (already defined in
+<tt>stdexcept</tt>).
+The pointer returned by <tt>at()</tt> has type <tt>const char *</tt> to prevent the
+string stored in the hash table from being changed. The calling function
+can make a copy if desired.
+</p>
+
+<br><hr>
+<p></p></li><li> <xmp class="code">   void dump() ;
+</xmp>
+<p>
+Dump should print some vital statistics and the contents of the hash
+table(s) to <tt>stdout</tt>. You should include the table size and number
+of items in the hash table(s). When you print out the string in each
+hash slot, include the item's hash index in parentheses (see example
+above.)
+</p>
+<br>
+</li></ul>
+
+
+<hr>
+<a name="implementation">
+<h2>Implementation Notes</h2> 
+</a>
+
+<ul>
+<li> Remember to mod out by the table size when you are working with 
+hash table indices.
+
+</li><li> Again, in hash tables, the indices wrap around to 0 at the bottom
+of the hash table. You must take this into account when you use linear
+probing for insert, find and remove.
+
+</li><li> One more time, the indices wrap. This means clusters can straddle
+the end of the hash table. When you move a cluster that is at the
+beginning or at the end of the table, you have to check if the cluster
+wraps around.  Also, note that <tt>for</tt> loops do not work very well
+in this situation, because
+<xmp>   for (int index = start ; index <= stop ; index++)
+</xmp>
+doesn't do the right thing when the cluster wraps around.
+
+</li><li> <span style="color:orange;">If you are thinking of working with
+negative indices for your hash table, remember that the modulo operator
+in C/C++ does not work mathematically (i.e., correctly): <tt>-2 % 10</tt>
+evaluates to -2, not 8. So, the negative indices will not wrap around to
+the end of the hash table as you might expect.</span>
+
+</li><li> You are working with C null-terminated strings, not C++ strings.
+If you haven't used C strings in a while, please review. For example, 
+a C string is just an array of <tt>char</tt>, so the type 
+is <tt>char *</tt>. A dynamically allocated array of C strings has
+type <tt>char * *</tt> since it is a pointer to an array of pointers to
+<tt>char</tt>. Here are
+<a href="http://userpages.umbc.edu/~slupoli/notes/C++/StringsINotes.docx">
+Mr. Lupoli's notes on C strings</a>.
+
+</li><li>
+You must use the <tt>strcmp()</tt> function to make string comparisons.
+You cannot use the <tt>==</tt> operator. That will do pointer
+comparison, not string comparison. To use <tt>strcmp()</tt>, make sure
+you
+<xmp class="code">   #include <string.h>
+</xmp>
+or
+<xmp class="code">   #include <cstring>
+</xmp>
+
+</li><li> Your hash table should make a copy of the string inserted, and not
+just store the pointer. Copies should be made using the <tt>strdup()</tt> 
+function. 
+
+</li><li> The <tt>strdup()</tt> function allocates memory using
+<tt>malloc()</tt> instead of <tt>new</tt>. To deallocate this memory,
+you must use <tt>free()</tt> instead of <tt>delete</tt>. While it is
+possible to allocate an array of <tt>char</tt> using <tt>new</tt>
+like this:
+<xmp class="code">   char *str = new char[15] ;
+</xmp>
+it would be very confusing for one program to sometimes use
+<tt>malloc()</tt> and sometimes use <tt>new</tt> to allocate strings.
+So, just stick to using <tt>malloc()</tt> and <tt>free()</tt> to
+allocate and deallocate C strings. Having said that, you don't really
+need to use <tt>malloc()</tt> at all, if you use <tt>strdup()</tt> to
+copy strings, since <tt>strdup()</tt> allocates memory.
+Finally, for all other memory allocations not involving C strings, 
+just use <tt>new</tt>.
+
+</li><li> Some of the strings that you are working with have type <tt>const char
+*</tt>. This means the string being pointed to cannot be changed. (The
+string is immutable in Python-speak.) Make sure that you know what this
+means. If you assign a <tt>const char *</tt> pointer to a <tt>char
+*</tt> pointer, the compiler will give you an error.
+
+</li><li> You should avoid copying strings whenever possible. For example,
+when you move a string from the old hash table to the new hash table
+during a rehash, you do not need to make a copy of the string. This
+means you probably want to have two versions of the <tt>insert()</tt>
+function. The standard one makes copies (because that's what your client
+is expecting). The internal one that you use for moving should not make
+copies. (Yes, one can call the other.)
+
+</li><li> You should periodically run your program under <tt>valgrind</tt>
+during development. This is so you can catch memory leaks as soon as
+possible. Also, if <tt>valgrind</tt> complains about memory read or
+memory write errors, this means <b>you have a bug in your program</b>.
+You should not ignore these errors.  You should fix the bug as soon as
+possible because memory errors tend to manifest themselves in other
+places and are difficult to debug. You want to know if your program has
+any memory errors as soon as possible, because it is likely that the bug
+is in the last few modifications you have made in your program.
+
+</li></ul>
+
+
+<hr>
+<h2>Test Programs</h2>
+
+The following programs should be compiled using
+<xmp>   g++ testX.cpp HashTable.cpp
+</xmp>
+where <tt>testX.cpp</tt> is one of <tt>test1.cpp</tt>, <tt>test2.cpp</tt>,
+<tt>test3.cpp</tt>, <tt>test4.cpp</tt> or <tt>test5.cpp</tt>.
+Run these programs under <tt>valgrind</tt> to check for memory leaks and
+memory read/write errors.
+<ul>  
+<p></p><li> Basic test of <tt>insert()</tt>, <tt>find()</tt> and
+<tt>remove()</tt> without triggering incremental rehashing.
+Code 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test1.cpp"><tt>test1.cpp</tt></a>)
+and sample output 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test1.txt"><tt>test1.txt</tt></a>).
+
+<p></p></li><li> Rehashing triggered. Clusters moved from old
+hash table to new hash table. Rehashing ends and only
+one table remains.
+Code 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test2.cpp"><tt>test2.cpp</tt></a>)
+and sample output 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test2.txt"><tt>test2.txt</tt></a>).
+
+<p></p></li><li> Rehashing triggered. Further insertions cause
+long probe sequence in new table. Rehashing stopped and
+all items are consolidated in one hash table.
+Code 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test3.cpp"><tt>test3.cpp</tt></a>)
+and sample output 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test3.txt"><tt>test3.txt</tt></a>).
+
+<p></p></li><li> Robust test with thousands of calls
+to <tt>insert()</tt>, <tt>find()</tt> and <tt>remove()</tt>.
+Resulting hash table is checked against equivalent STL <tt>set</tt>.
+Code 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test4.cpp"><tt>test4.cpp</tt></a>)
+and sample output 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test4.txt"><tt>test4.txt</tt></a>).
+
+<p></p></li><li> Test of copy constructor and assignment operator.
+Code 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test5.cpp"><tt>test5.cpp</tt></a>)
+and sample output 
+(<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj5files/test5.txt"><tt>test5.txt</tt></a>).
+
+</li></ul>
+
+
+
+<hr>
+<h2>What to Submit</h2>
+
+<p>
+You must submit the following files:
+</p>
+<ul>
+<li> <tt>HashTable.h</tt>
+</li><li> <tt>HashTable.cpp</tt>
+</li><li> <tt>Driver.cpp</tt>
+</li></ul>
+<p>
+The main function in <tt>Driver.cpp</tt> should exercise your
+<tt>HashTable</tt> functions and show what your program has
+implemented successfully. (I.e., if your code in <tt>Driver.cpp</tt> 
+does not produce any output or it seg faults, 
+then we will assume that you have not implemented very much.)
+</p>
+
+
+
+      </div>
+      <div id="footer" class="donotprint">
+        <div>
+          <a href="http://userpages.umbc.edu/~chang/cs341.s17/index.shtml">CMSC 341 — Spring 2017 </a>
+        </div>
+        <a href="http://www.csee.umbc.edu/">CSEE</a> |
+        <a href="http://www.umbc.edu/">UMBC</a>
+      </div>
+    </div>
+
+
+
+</body></html>

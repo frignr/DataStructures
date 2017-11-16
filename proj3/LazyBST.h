@@ -1,0 +1,97 @@
+// File: LazyBST.h
+// 
+// CMSC 341 Spring 2017 Project 3
+// Seung Hun Lee
+// Class declarations for LazyBST
+//
+// This LazyBST does not have a wrapper class and each LazyBST
+// instance can be thought of as a separate tree if needed. This means
+// that individual subtrees can be manipulated like a tree. Also means 
+// that programmer probably should keep track of the implications if 
+// they want to play around with each subtree. In addition to project
+// specifications, constructor with key input and a functions to return 
+// a tree made from an array has been added for convenience.
+
+#ifndef _LAZYBST_H_
+#define _LAZYBST_H_
+
+#include <iostream>
+#include <string>
+#include <stdexcept>
+#include <sstream>
+using namespace std;
+
+class LazyBST{
+ public:
+  //LazyBST Constructor
+  LazyBST();
+
+  //LazyBST with a key input
+  LazyBST(int key);
+
+  //LazyBST copy Constructor
+  LazyBST(const LazyBST& other) ;
+
+  //LazyBST destructor
+  ~LazyBST();
+
+  //LazyBST creation fromm an array
+  LazyBST * arrayToBST(int treeArray[], int leftEnd, int rightEnd);
+
+  //LazyBST assignment operator
+  const LazyBST& operator=(const LazyBST& rhs) ;
+
+  //Insert a node
+  void insert(int key);
+
+  //Remove a node
+  bool remove(int key);
+
+  //Check whether a key is present
+  bool find(int key);
+
+  //Inorder functions as required 
+  void inorder();
+  
+  //Tells whether there is a node at certain coordinate and if present store the key in this int
+  bool locate(const char *position, int& key);
+ private:
+
+  //Recursive function under insert
+  void insertRecursive(int key, bool& rebalanceNeeded);
+
+  //Function that actually removes a node
+  bool removeRecursive(int key, bool& rebalanceNeeded);
+
+  //Update a node's height and numNodes
+  void update();
+
+  //Update a whole tree
+  void updateTree();
+
+  //toString method to assist with inorder
+  string toString();
+
+  //Checks if the tree is balanced
+  bool checkBalance();
+
+  //Checks whether tree is balanced and balances it if needed
+  //This is a functions that is no longer used in this version of LazyBST
+  void rebalanceCheck();
+
+  //Actual process of rebalancing
+  void rebalance();
+
+  //Turns a tree into an array. Position is index of left end
+  void fillArray(int treeArray[], int size, int position);
+  
+  LazyBST*  m_left; //Left children of this node
+  LazyBST*  m_right; //Right children of this node
+
+  int m_key; //key stored in this node.
+  int m_height; //Height of this node
+  int m_numNodes; //Total number of nodes in this tree including itself,
+                 //its children nodes and leaves
+};
+
+#endif

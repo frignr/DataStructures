@@ -1,0 +1,806 @@
+
+<!-- saved from url=(0063)http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2.shtml -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"> 
+   <title>
+      Project 2: Sally FORTH,
+      CMSC 341 Spring 2017
+   </title> 
+   <link rel="shortcut icon" href="http://userpages.umbc.edu/~chang/cs341.s17/chang.ico">
+   <link rel="stylesheet" type="text/css" href="./Project 2_ Sally FORTH, CMSC 341 Spring 2017_files/style-graph.css">
+</head> 
+
+<body> 
+    <div id="wrapper">
+      <div id="header">
+	<h1>CMSC 341 Data Structures — All Sections — Spring 2017</h1>
+        <div id="headerimg" class="donotprint"></div>
+	<div id="nav" class="donotprint">
+	  <ul>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/">Home</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/sections.shtml">Sections</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/syllabus.shtml">Syllabus</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/schedule.shtml">Schedule</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/homework/">Homework</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/">Projects</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/resources/">Resources</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/faq.shtml">FAQ</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/staff/">Staff</a></li>
+	  </ul>
+	</div>
+     </div>
+     <div id="content">
+
+<!-- END HEADER -->
+
+
+
+
+<h1>Project 2: Sally FORTH</h1>
+
+<h2>Due: Tuesday, March 7, 8:59:59pm</h2>
+
+<hr>
+<h2>Addendum</h2>
+<i>Changes in <font color="orange">orange</font></i>
+<p>
+<b>[Mon Feb 27, 14:10pm]</b> 
+Misbehaving <tt>IFTHEN ELSE ENDIF</tt> had infix <tt> 3 &lt; 10 </tt>
+instead of postfix <tt>3 10 &lt;</tt>.
+
+</p><p>
+<b>[Mon Feb 27, 13:30pm]</b> 
+Fixed indentation in <tt>Sally.cpp</tt>. (Stupid tabs.)
+
+</p><p>
+<b>[Thu Feb 23, 16:40pm]</b> 
+Replaced interpreter images with a higher resolution file.
+
+</p><hr>
+<h2>Objectives</h2>
+
+The objective of this programming assignment is to have you 
+become familiar with some of the templated data structures in 
+the C++ Standard Template Library (STL).
+ 
+
+<hr>
+<h2>Introduction</h2> 
+
+<p> 
+In this project, you will implement an interpreter for a <a href="http://www.forth.org/">FORTH</a>-like programming language.  In
+FORTH, arithmetic operations are written in Reverse Polish Notation
+(RPN). In RPN, the operands are written first, followed by the
+operation. For example, 
+</p><xmp>   2 + 3
+</xmp>
+would be written as 
+<xmp>   2 3 +
+</xmp>
+The main
+"advantage" of RPN is that parentheses are unnecessary.  For example,
+<xmp>   (2 + 3) * (4 + 5) 
+</xmp>
+in RPN is 
+<xmp>   2 3 + 4 5 + *
+</xmp>
+This greatly simplifies
+the job of a FORTH interpreter or compiler since it does not have to do
+very much parsing.  (A standard joke about FORTH is that it is a
+programming language that uses the programmer as the parser.) In fact, a
+FORTH compiler can be written in assembly language from scratch quite
+quickly.  (Using STL, you will put together a FORTH interpreter in
+hours.) FORTH was implemented on many small computer systems in the
+1970's and 1980's and was popular among astronomers. Today, vestiges of
+FORTH can still be found in the Postscript language and, to a lesser
+extent, in PDF.  
+<p></p>
+
+<p>
+FORTH is a stack-based language. The best way to think about the RPN
+expression 
+</p><xmp>    2 3 + 4 5 + *
+</xmp> 
+is to imagine a stack that holds the operands for each operation.
+Initially, <tt>2</tt> and <tt>3</tt> are pushed onto this parameter stack.
+When <tt>+</tt> is executed, it takes the two parameters <tt>2</tt> and
+<tt>3</tt> off the top of the stack and pushes their sum, <tt>5</tt>, on
+the stack. Next, <tt>4</tt> and <tt>5</tt> are pushed onto the stack, and
+then, the second <tt>+</tt> replaces them with <tt>9</tt>.  Finally, the
+<tt>*</tt> operation takes <tt>9</tt> and <tt>5</tt> off the stack and
+replaces them with the product, <tt>45</tt>.  
+In FORTH, almost
+everything is done in reversed notation, not just the arithmetic
+operators. Even if statements and loops use the parameter stack.  
+<p></p>
+
+<p> 
+We will call our FORTH interpreter "Sally" which is an acronym for
+Yet Another Little Stack-based Language. (Since ordering is scrambled in
+FORTH, the acronym is "Sally" rather than the unpronounceable "Yalsl".)
+</p>
+
+
+<hr>
+<h2>Assignment</h2>
+
+<p>
+For this project, we will start you off with a working interpreter that
+only has arithmetic operations 
+(
+<tt>+</tt>,
+<tt>-</tt>,
+<tt>*</tt>,
+<tt>/</tt>,
+<tt>%</tt> and
+<tt>NEG</tt> 
+)
+and printing commands 
+(
+<tt>.</tt>,
+<tt>SP</tt> and
+<tt>CR</tt>
+). The source code for this calculator is here:
+</p>
+<ul>
+   <li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/Sally.h"><tt>Sally.h</tt></a>
+   </li><li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/Sally.cpp"><tt>Sally.cpp</tt></a>
+   </li><li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/driver1.cpp"><tt>driver1.cpp</tt></a>
+   </li><li> <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/driver2.cpp"><tt>driver2.cpp</tt></a>
+</li></ul>
+<p>
+Your assignment is to expand the interpreter to handle stack operations, 
+variables, comparison operators, logical operators, if statements and loops.
+</p>
+
+<p>
+The calculator program has a lexical parser that groups the
+characters of the input into <i>tokens</i>.
+The lexical parser also ignores comments that come after <tt>//</tt>
+and recognizes string literals between <tt>."</tt> and <tt>"</tt>. 
+Other than comments and string literals, the tokens are the 
+characters separated by white space (the space character, tabs and
+newlines).
+If a token can be converted into an
+integer, the lexical analyzer will indicate that the token is an
+integer. String literals are also indicated. Everything else is labeled
+"unknown". In the code above, the <tt>Sally</tt> class has a 
+<tt>nextToken()</tt> member function that the interpreter calls to get
+the next <tt>Token</tt> of the input. The <tt>nextToken()</tt> function 
+in turn calls <tt>fillBuffer()</tt> which implements the lexical parser.
+</p>
+
+<p>
+The lexical parser will keep placing tokens into a buffer until the end
+of the input or a blank line is encountered. (A blank line has no 
+characters, not even spaces and tabs.) When a blank line or end of file
+is reached, control is given back to the "main loop" of the interpreter.
+This arrangement allows us to use the interpreter in an interactive
+manner (type in a code fragment followed by a blank line) and also have
+the interpreter read from a file.
+Here's an example of a program that the calculator can handle:
+</p>
+<p></p><xmp class="code">
+// File: example1.sally
+//
+// CMSC 341 Spring 2017 Project 2
+//
+// Sally FORTH source code
+//
+// Basic test
+//
+
+."In FORTH, speak like Yoda we do"     // string literals between ." and "
+.                                      // . prints top of the stack
+CR                                     // prints carriage return
+."Three plus five, what is?"
+.
+SP                            // prints a space character
+3 5 +                         // computes the sum
+.                             // prints the top of the stack again
+CR
+
+</xmp><p></p>
+<p>
+<br>
+Running this source through the calculator program produces this output:
+<br>
+</p>
+<p></p><xmp class="code">
+In FORTH, speak like Yoda we do
+Three plus five, what is? 8
+End of Program
+Parameter stack empty.
+
+</xmp><p></p>
+
+<br>
+<p>
+The main loop of the interpreter does the following:
+</p>
+<ul>
+   <p></p><li> Get the next token.
+   <p></p></li><li> If the token is an integer, push the token on the parameter
+   stack.
+   <p></p></li><li> If the token is a string literal, push the token on the
+   stack.
+   <p></p></li><li> Otherwise, look for the token in the symbol table.
+   <ul>
+      <li> If the token is found to be a keyword in the symbol table, 
+         then execute the operation for the keyword. 
+	 This is accomplished by invoking a function
+	 through the function pointer stored in the symbol table entry.
+
+      </li><li> If the token is a variable, push the token on the stack,
+         but re-label the token as a variable.
+       
+      </li><li> Otherwise, the token is really an unknown item. We will
+         push the token onto the parameter stack, but this is likely
+	 to cause an error later.
+   </li></ul>
+</li></ul>
+
+<p>
+Here is a visual diagram of the interpreter:
+</p>
+<p></p><center>
+<img src="./Project 2_ Sally FORTH, CMSC 341 Spring 2017_files/interpreter.jpg">
+</center><p></p>
+
+The code for the main loop of the calculator program looks like:
+(The loop exits when <tt>nextToken()</tt> throws a <tt>EOProgram</tt>
+exception.)
+
+<p></p><xmp class="code">
+   Token tk ;
+
+   while( 1 ) {
+      tk = nextToken() ;
+
+      if (tk.m_kind == INTEGER || tk.m_kind == STRING) {
+
+         // if INTEGER or STRING just push onto stack
+         params.push(tk) ;
+
+      } else { 
+         it = symtab.find(tk.m_text) ;
+        
+         if ( it == symtab.end() )  {   // not in symtab
+
+            params.push(tk) ;
+
+         } else if (it->second.m_kind == KEYWORD)  {
+
+            // invoke the function for this operation
+            //
+            it->second.m_dothis(this) ;   
+           
+         } else if (it->second.m_kind == VARIABLE) {
+
+            // variables are pushed as tokens
+            //
+            tk.m_kind = VARIABLE ;
+            params.push(tk) ;
+
+         } else {
+
+            // default action
+            //
+            params.push(tk) ;
+
+         }
+      }
+   }
+
+</xmp><p></p>
+
+<p>
+Here <tt>Token</tt> is a data-only class with 3 data members.
+The member <tt>m_kind</tt> says whether the token is an
+<tt>INTEGER</tt>, <tt>STRING</tt> or <tt>UNKNOWN</tt>.
+(See class definition of <tt>Token</tt> below.)
+The member <tt>m_value</tt> is the binary <tt>int</tt> value
+of the token, if the token happens to be a number.
+Finally, <tt>m_text</tt> is the original text string of the token.
+</p>
+<p></p><xmp class="code">
+   enum TokenKind { UNKNOWN, KEYWORD, INTEGER, VARIABLE, STRING } ;
+
+   class Token {
+
+   public:
+
+      Token(TokenKind kind=UNKNOWN, int val=0, string txt="" ) ;
+      TokenKind m_kind ;
+      int m_value ;      // if it's a known numeric value
+      string m_text ;    // original text that created this token
+
+   } ;
+</xmp><p></p>
+<p>
+In the interpreter, the token buffer <tt>tkBuffer</tt> is an STL 
+<tt>list</tt> of <tt>Token</tt>s. Similarly, the parameter stack 
+<tt>params</tt> is an STL <tt>stack</tt> of <tt>Token</tt>s. 
+The symbol table, on the other hand, is an STL <tt>map</tt> from
+<tt>string</tt> to <tt>SymTabEntry</tt>. The class <tt>SymTabEntry</tt>
+is defined as:
+</p>
+<p></p><xmp class="code">
+   typedef void (* operation_t)(Sally *Sptr) ;
+
+   class SymTabEntry {
+   public:
+      SymTabEntry(TokenKind kind=UNKNOWN, int val=0, operation_t fptr=NULL) ;
+      TokenKind m_kind ;
+      int m_value ;            // variables' values are stored here
+      operation_t m_dothis ;   // pointer to a function that does the work
+   } ;
+</xmp><p></p>
+<p>
+Note that <tt>SymTabEntry</tt> does not have an <tt>m_text</tt> member.
+This is because the symbol table is a <tt>map</tt> from <tt>string</tt>
+to <tt>SymTabEntry</tt> and the <tt>m_text</tt> member in <tt>Token</tt>
+is the string used as the key in the map. For example, for the
+<tt>CR</tt> operation, the lexical parser will put the string
+<tt>"CR"</tt> in the <tt>m_text</tt> member of a token. This is how the
+interpreter can get hold of the string <tt>"CR"</tt> to search in the
+symbol table for the entry for the <tt>CR</tt> operation. The
+<tt>m_kind</tt> member of the symbol table entry  will then say 
+that <tt>CR</tt> is a keyword, whereupon the interpreter will invoke the
+function stored in the member <tt>m_dothis</tt>.
+</p>
+<p>
+How did this function pointer get stored in the symbol table entry? The
+constructor for the interpreter must initialize the symbol table. (See
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/Sally.cpp"><tt>Sally.cpp</tt></a>.) The constructor
+for the <tt>Sally</tt> class includes the assignment
+</p>
+<p></p><xmp class="code">   symtab["CR"]   =  SymTabEntry(KEYWORD,0,&doCR) ;
+</xmp><p></p>
+<p>
+That adds an entry to the symbol table for the keyword <tt>CR</tt> with the
+address of the function <tt>doCR</tt>. What is <tt>doCR</tt>? 
+It is declared as a static member function of the <tt>Sally</tt> class:
+</p>
+<p></p><xmp class="code">   static void doCR(Sally *Sptr) ;
+</xmp><p></p>
+The definition of <tt>doCR</tt> in 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/Sally.cpp"><tt>Sally.cpp</tt></a> is:
+<p></p><xmp class="code">   void Sally::doCR(Sally *Sptr) {
+      cout << endl ;
+   }
+</xmp><p></p>
+<p>
+Thus, when interpreter encounters <tt>CR</tt> in the Sally FORTH
+program, it will invoke <tt>doCR()</tt> and print a newline to the
+standard output. It may seem rather convoluted, but using a <tt>map</tt>
+this way reduces the number of string comparisons that we have to make.
+(And, it gets you to practice using the STL <tt>map</tt> class.)
+</p>
+<p>
+Why is <tt>doCR()</tt> a static member function?? There are two reasons.
+First, it is rather difficult to invoke a non-static member function
+using a function pointer. Some tricks are needed just to get a
+pointer to a non-static member function. In contrast, the pointer to
+<tt>doCR()</tt> is just <tt>&amp;doCR</tt>.
+Secondly, we want a function that will be allowed to work on the
+parameter stack and the symbol table, which should be private members of
+the <tt>Sally</tt> class. Member functions, even static ones, are
+allowed access to the private members.
+</p>
+<p>
+Now, static member functions do not have a host object. So, how does it
+get hold of the parameter stack? Through its own parameter. Here is the
+function that handles the <tt>+</tt> operation. Notice that every access
+of the parameter stack <tt>params</tt> uses <tt>Sptr</tt>.
+</p>
+<p></p><xmp class="code">   void Sally::doPlus(Sally *Sptr) {
+      Token p1, p2 ;
+
+      if ( Sptr->params.size() < 2 ) {
+         throw out_of_range("Need two parameters for +.") ;
+      }
+      p1 = Sptr->params.top() ;
+      Sptr->params.pop() ;
+      p2 = Sptr->params.top() ;
+      Sptr->params.pop() ;
+      int answer = p2.m_value + p1.m_value ;
+      Sptr->params.push( Token(INTEGER, answer, "") ) ;
+   }
+</xmp><p></p>
+<p>
+Where does <tt>Sptr</tt> come from? When the functions <tt>doCR</tt> and
+<tt>doPlus</tt> are invoked in the main interpreter loop, the pointer to
+the host, the <tt>this</tt> pointer, is passed as a parameter:
+</p>
+<p></p><xmp class="code">      it->second.m_dothis(this) ;   
+</xmp><p></p>
+
+<p>
+Finally, these are the operations that you have to add to the Sally
+FORTH interpreter:
+</p>
+<ul>
+  <li> Stack operations: <tt>DUP DROP SWAP ROT</tt>
+
+  </li><li> Variable operations: <tt>SET @ !</tt>
+
+  </li><li> Comparison operations: <tt>&lt; &lt;= == != &gt;= &gt;</tt>
+
+  </li><li> Logic operations: <tt>AND OR NOT</tt>
+
+  </li><li> If statements: <tt>IFTHEN ELSE ENDIF</tt>  
+
+  </li><li> Loop construct: <tt>DO UNTIL</tt>
+</li></ul>
+<br>
+
+
+<hr>
+<h2>Specifications</h2>
+
+<p>
+Here are the specifics of the assignment, including a description of
+each operation that you have to add to the interpreter.
+</p>
+
+<p>
+<b>Requirement:</b> You are allowed to modify <tt>Sally.h</tt> and to
+change the implementation of the functions given to you, but you must
+use the STL <tt>list</tt> class for the token buffer, the STL
+<tt>stack</tt> class for the parameter stack and the STL <tt>map</tt>
+class for the symbol table. (For example, you can't change the
+implementation and use <tt>vector</tt> for any of these data
+structures.)
+</p> 
+
+<p>
+<b>Requirement:</b> For all operations involving the parameter stack, if
+there are not enough items on the stack, your interpreter should throw
+an <tt>out_of_range</tt> exception.
+</p>
+
+<br>
+<p>
+<b>Stack operations:</b> <tt>DUP DROP SWAP ROT</tt>
+</p>
+<ul>
+<p></p><li> The <tt>DUP</tt> operation makes a copy of the top item of
+the parameter stack. For example, after 
+<xmp>   15 DUP
+</xmp> 
+the top two items of the parameter stack are 15 and 15.
+<p></p>
+<p></p></li><li> The <tt>DROP</tt> operation removes the top item from the
+parameter stack.
+<p></p>
+<p></p></li><li> The <tt>SWAP</tt> operation exchanges the top two items of the parameter
+stack. For example, after 
+<xmp>   41 79 SWAP
+</xmp>
+the top item of the parameter stack is <tt>41</tt> and the second item
+from the top is <tt>79</tt>.
+<p></p>
+
+<p></p></li><li> The <tt>ROT</tt> operation "rotates" the top three items of the parameter
+stack. For example, after 
+<xmp>   17 18 19 ROT
+</xmp>
+the top item is <tt>17</tt>, the next item is <tt>19</tt> and then <tt>18</tt>.
+</li></ul>
+
+<br>
+<p>
+<b>Variable operations:</b> <tt>SET @ !</tt>
+</p><p>
+Variables are stored in the symbol table. The symbol table entry for a
+variable also holds the value
+of the variable. Only integer variables are allowed. The <tt>SET</tt>
+operation defines the variable. For example
+</p>
+<xmp>   13 Lucky SET
+</xmp>
+<p>
+will create a symbol table entry for a variable named  <tt>Lucky</tt> and initialize it
+with the value 13. Duplicate definitions are not allowed. If the symbol
+table already has a value for <tt>"Lucky"</tt>, an error message should
+be printed out and the interpreter should carry on. (This also prevents
+variable definitions from redefining keywords.)
+</p>
+<p>
+The <tt>@</tt> operation (pronounced "at" or "fetch") retrieves the
+value of a variable and places that value on the parameter stack.
+For example:
+</p>
+<xmp>   Lucky @
+</xmp>
+<p>
+will place the value <tt>13</tt> on the stack. If no such variable
+exists, the interpreter should print out an error message and carry on.
+</p>
+The <tt>!</tt> operation stores a value in a variable. For example:
+<p></p>
+<xmp>   17 Lucky ! 
+</xmp>
+<p>
+stores the value <tt>17</tt> in the entry for <tt>Lucky</tt> in the
+symbol table. If no entry exists for a variable, the interpreter should
+print out an error message and carry on.
+</p>
+
+<br>
+<p>
+<b>Comparison operations:</b> <tt>&lt; &lt;= == != &gt;= &gt;</tt>
+</p><p>
+We will use the C/C++ convention that 0 represents the Boolean value
+false and anything else is true. Each of these operations will take two
+values from the top of the parameter stack, compare them and push the
+Boolean result of the comparison. The order of the operands is the same
+as the infix comparison. That is, 
+</p><xmp>   3 10 <
+</xmp> 
+should result in "true" being pushed on the stack. On the other hand 
+<xmp>   3 10 >
+</xmp>
+should result in false.
+<p></p>
+
+<br>
+<p>
+<b>Logic operations:</b> <tt>AND OR NOT</tt>
+</p><p>
+Again, we will use the C/C++ convention that 0 represents the Boolean value
+false and anything else is true. The logical operations <tt>AND</tt> and
+<tt>OR</tt> are binary operations. The <tt>NOT</tt> operator is unary
+and negates the Boolean value at the top of the stack.
+</p>
+
+<br>
+<p>
+<b>If statements:</b> <tt>IFTHEN ELSE ENDIF</tt>  
+</p><p>
+If statements in FORTH assume that the top of the stack has the Boolean
+value to test. For example:
+</p>
+<p>
+</p><xmp class="code">   1 2 > IFTHEN
+      ."It's true!" . CR
+   ELSE
+      ."It's false!" . CR
+   ENDIF
+</xmp><p></p>
+should print <tt>It's false!</tt>. On the other hand,
+<p></p><xmp class="code">   1 2 <= IFTHEN
+      ."It's true!" . CR
+   ELSE
+      ."It's false!" . CR
+   ENDIF
+</xmp><p></p>
+should print <tt>It's true!</tt>.
+<p></p>
+<p>
+All if statements should have an <tt>IFTHEN</tt> part and an
+<tt>ELSE</tt> part. Nested if statements are allowed.
+</p>
+
+<br>
+<p>
+<b>Loop construct:</b> <tt>DO UNTIL</tt>
+</p><p>
+A <tt>DO UNTIL</tt> loop will execute the body of the loop until a
+Boolean value is true.  For example, the following loop will print out
+1 through 10 (inclusive).
+</p><xmp class="code">   0 DO
+      1 +
+      DUP . CR
+      DUP
+   10 >= UNTIL
+   DROP
+</xmp>
+
+
+
+<br><br>
+<hr>
+<h2>Test Programs</h2> 
+
+
+<p>
+The following test programs may be used to check the compatibility
+of your Sally FORTH interpreter. These programs do not guarantee the
+<i>correctness</i> of your implementation.  Even if your interpreter
+runs these programs correctly, it does not mean your
+interpreter is error-free.  Grading will be done using programs that
+exercise your interpreter much more thoroughly.  You must do the
+testing yourself --- testing is part of programming.  Conversely, if
+your interpreter does <i>not</i> run these test programs
+correctly, then it is unlikely that it will run  the grading programs 
+correctly.
+</p>
+
+<p>
+</p><ul>
+<p></p><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example1.sally">  example1.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example1.txt">    example1.txt </a>
+
+<p></p></li><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example2.sally">  example2.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example2.txt">    example2.txt </a>
+
+<p></p></li><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example3.sally">  example3.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example3.txt">    example3.txt </a>
+
+<p></p></li><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example4.sally">  example4.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example4.txt">    example4.txt </a>
+
+<p></p></li><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example5.sally">  example5.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example5.txt">    example5.txt </a>
+
+<p></p></li><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example6.sally">  example6.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example6.txt">    example6.txt </a>
+
+<p></p></li><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example7.sally">  example7.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example7.txt">    example7.txt </a>
+
+<p></p></li><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example8.sally">  example8.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example8.txt">    example8.txt </a>
+
+<p></p></li><li>
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example9.sally">  example9.sally </a> and <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj2files/example9.txt">    example9.txt </a>
+</li></ul>
+<p></p>
+
+<p>
+These files are also available on GL in the directory:
+</p><xmp>   /afs/umbc.edu/users/c/h/chang/pub/www/cs341.s17/projects/proj2files/
+</xmp>
+<p></p>
+
+
+<hr>
+<h2>Implementation Notes</h2> 
+
+<ul>
+<p></p><li>
+One of the main objectives for this project is for you to understand the
+STL classes <i>by reading the documentation</i>. Here are two sources
+that document the STL classes:
+<ul>
+   <p></p><li> <a href="https://www.sgi.com/tech/stl/table_of_contents.html">
+   Documentation for STL on SGI.com</a>
+
+   <p></p></li><li> <a href="http://www.cplusplus.com/reference/stl/"> Documentation
+   for STL on www.cplusplus.com </a>
+</li></ul>
+
+<p></p></li><li> Before you use a feature of an STL class that you have not used
+before, write a separate little program that tests this feature.
+Make sure that the feature works as you expect <i>before</i> you
+attempt to incorporate it in the interpreter.
+
+<p></p></li><li> Practice incremental development. Test your code after you have
+implemented each group of Sally FORTH operations.
+
+<p></p></li><li> As declared, the <tt>Sally</tt> class does not have a
+destructor, a copy constructor or an overloaded assignment operator. Why
+is this OK? If you change the declarations in <tt>Sally.h</tt>, is it
+still OK?
+
+<p></p></li><li> 
+If statements can be nested. After executing the <tt>IFTHEN</tt> part, the
+interpreter should skip over the <tt>ELSE</tt> part until it reaches
+<tt>ENDIF</tt>.
+However, there could be several <tt>IFTHEN ELSE ENDIF</tt> statements 
+in the original <tt>ELSE</tt> part. So, you can't stop after the first 
+<tt>ENDIF</tt> you find, because that <tt>ENDIF</tt> might belong to a 
+different <tt>IFTHEN</tt> statement. You should count the number
+of <tt>IFTHEN</tt> tokens you see and the number of <tt>ENDIF</tt> tokens.
+You should stop only after the <tt>IFTHEN</tt> and <tt>ENDIF</tt> tokens are "balanced".
+
+<p></p></li><li>
+Be careful with ENDIF tokens. They don't do anything, but you should
+still put them in the symbol table. (Why?)
+
+<p></p></li><li>
+Your interpreter is allowed to misbehave if the programmer does not
+match the <tt>IFTHEN</tt>, <tt>ELSE</tt> and <tt>ENDIF</tt> tokens.
+For example, the code below has undefined behavior because the inner
+<tt>IFTHEN</tt> does not have a <tt>ELSE</tt> part.
+<xmp class="code">   1 < 2 IFTHEN
+      3 10 > IFTHEN
+        ."something" . CR
+      ENDIF
+   ELSE
+      ."another thing" . CR 
+   ENDIF
+</xmp>
+<br>
+
+<p></p></li><li>
+When the interpreter encounters a <tt>DO UNTIL</tt> loop, it must start
+saving the tokens it has interpreted instead of discarding them. The
+interpreter can switch to the "save" mode when the <tt>DO</tt> token is
+encountered. The input tokens that come after <tt>DO</tt> 
+should be saved in an STL <tt>list</tt> of
+<tt>Token</tt>s. When <tt>UNTIL</tt> is executed, if the value on top of
+the stack is false, the saved tokens should be inserted back in the
+token buffer, at the front. Then, the next operation to be interpreted
+will be the first operation of the body of the <tt>DO UNTIL</tt> loop.
+<p></p>
+<p>
+If the <tt>UNTIL</tt> operation stops the loop, the saved 
+tokens should be discarded and
+the interpreter should switch back to "discard" mode.
+</p><p>
+This technique does not work for nested loops. (Why?)
+</p>
+
+<p></p></li><li>
+Look up the <tt>splice()</tt> member function of the STL <tt>list</tt>
+class. It will be helpful for implementing <tt>DO UNTIL</tt> loops.
+<p></p>
+
+<p></p></li><li>
+A <tt>DUMP</tt> operation is included. This is for you to implement any
+sort of debugging functionality that you may need. For example, DUMP
+might print out the contents of the parameter stack to help you figure
+out what's going on. (Hint: make a copy of the stack and print out the
+copy.) Then the <tt>DUMP</tt> operation can be inserted in the Sally
+FORTH source code where you would like to inspect the parameter stack.
+<p></p>
+
+</li></ul>
+
+<br>
+<hr>
+<h2>Extra Credit</h2>
+<p>
+For 10 points extra credit, implement nested <tt>DO UNTIL</tt> loops.
+<i>Hint:</i> make a stack of lists of Tokens to save the bodies of the
+loops. Be careful that you do the right thing when an inner loop
+terminates. What should you do with the inner loop's body?
+</p>
+
+<br>
+
+<hr>
+<h2>What to Submit</h2>
+
+<p>
+You must submit the following files to the <tt>proj2</tt> directory.
+</p>
+<p>
+</p><ul>
+<li> <tt>Sally.h</tt>
+</li><li> <tt>Sally.cpp</tt>
+</li><li> <tt>Driver.cpp</tt>
+</li><li> <tt>test.sally</tt>
+</li></ul>
+<p></p>
+<p>
+The <tt>test.sally</tt> program (written in Sally FORTH) should include
+tests showing the parts of your interpreter that work correctly.
+</p>
+
+<p>
+If you followed the instructions in the 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/submission.shtml">Project Submission</a> 
+page to set up your directories, you can submit your code using 
+this Unix command command.
+</p>
+<p></p><xmp class="code">   cp Sally.h Sally.cpp Driver.cpp test.sally ~/cs341proj/proj2/
+</xmp>
+<p></p>
+
+
+      </div>
+      <div id="footer" class="donotprint">
+        <div>
+          <a href="http://userpages.umbc.edu/~chang/cs341.s17/index.shtml">CMSC 341 — Spring 2017 </a>
+        </div>
+        <a href="http://www.csee.umbc.edu/">CSEE</a> |
+        <a href="http://www.umbc.edu/">UMBC</a>
+      </div>
+    </div>
+
+
+
+</body></html>

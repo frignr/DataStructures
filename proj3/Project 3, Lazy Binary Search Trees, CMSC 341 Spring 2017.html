@@ -1,0 +1,545 @@
+
+<!-- saved from url=(0063)http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3.shtml -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"> 
+   <title>
+      Project 3, Lazy Binary Search Trees,
+      CMSC 341 Spring 2017
+   </title> 
+   <link rel="shortcut icon" href="http://userpages.umbc.edu/~chang/cs341.s17/chang.ico">
+   <link rel="stylesheet" type="text/css" href="./Project 3, Lazy Binary Search Trees, CMSC 341 Spring 2017_files/style-graph.css">
+</head> 
+
+<body> 
+    <div id="wrapper">
+      <div id="header">
+	<h1>CMSC 341 Data Structures — All Sections — Spring 2017</h1>
+        <div id="headerimg" class="donotprint"></div>
+	<div id="nav" class="donotprint">
+	  <ul>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/">Home</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/sections.shtml">Sections</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/syllabus.shtml">Syllabus</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/schedule.shtml">Schedule</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/homework/">Homework</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/">Projects</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/resources/">Resources</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/faq.shtml">FAQ</a></li>
+	    <li><a href="http://userpages.umbc.edu/~chang/cs341.s17/staff/">Staff</a></li>
+	  </ul>
+	</div>
+     </div>
+     <div id="content">
+
+<!-- END HEADER -->
+
+
+
+
+<h1>Project 3, Lazy Binary Search Trees</h1>
+
+<h2>Due: Tuesday, April 11, 8:59pm</h2>
+
+<hr>
+<h2>Addenda</h2>
+<ul>
+   <li> [Thu 3/30/17 16:10]  <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3.shtml#tests">Test programs</a> updated
+   to fix extra paramter used in calls to <tt>remove()</tt>.
+   </li><li> [Thu 3/30/17 16:10]  <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3.shtml#tests">Test programs</a> are available now.
+   </li><li> [Tue 3/28/17 11:19]  Clarified that <tt>insert()</tt> and
+   <tt>remove()</tt> should take <i>O</i>( log <i>n</i> ) time without
+   counting the time to rebalance.
+</li></ul>
+<font color="orange">Corrections/clarifications in orange below.</font>
+
+<hr>
+<h2>Objectives</h2>
+
+The objective of this programming assignment is to have you 
+practice using recursion in your programs and to familiarize you with
+the binary search tree data structure.
+ 
+
+<hr>
+<h2>Introduction</h2> 
+
+<p>
+In real life, laziness if often disdained. (See <a href="http://en.wikipedia.org/wiki/Sloth_(deadly_sin)">Wikipedia article
+on sloth</a>.)
+In computer science, however, laziness is sometimes a viable strategy.
+Why do today what you can put off until tomorrow? especially if there is
+a chance that you won't actually have to do it tomorrow either?
+</p>
+
+<p>
+In contrast to a AVL trees and Red-Black Trees, where we 
+diligently maintain a balance condition to guarantee that 
+the tree has <i>O</i>( log <i>n</i>) height,
+in a Lazy BST, we don't worry about the balancing until things get
+really out of whack.  Insert and delete proceed in the same manner as an
+unbalanced binary search tree until we notice that at some node of the
+BST, the left subtree is twice as large as the right subtree (or vice
+versa).  When this happens we <i>rebalance</i> the subtree of the Lazy
+BST rooted at this node.
+</p>
+
+<p>
+When a subtree of a Lazy BST is rebalanced, we convert the entire
+subtree into a sorted array. Then we convert the array back into a perfectly
+balanced BST. Rebuilding is easy because the array is sorted. 
+We can find the middle element of the array in constant time and make it the 
+root of the new subtree. Then, we recursively build the left subtree
+and the right subtree using, respectively, the portion of the array that
+has keys smaller than the root and the portion of the array that has
+keys larger than the root. The result is a binary search tree that is
+as balanced as possible. 
+(See <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3-example.shtml">Project&nbsp;3 Examples</a>.)
+The rebalance procedure takes <i>O</i>( <i>t</i> ) on a BST
+subtree with <i>t</i> elements. However, we don't have to rebalance very
+often — 
+amortized analysis shows that the insert and delete procedures take
+<i>O</i>( log <i>n</i> ) amortized time on a Lazy BST with <i>n</i>
+elements.
+</p>
+
+<p>
+Since rebalancing is expensive, we add another provision: we won't
+rebalance a subtree that has height &#8804; 3. An unbalanced subtree that
+has height 3 will not add very much to the height of the overall tree
+and hence will not contribute very much to the running time of the BST
+procedures. (We adopt the convention that the
+height of a leaf to is&nbsp;0, where a leaf is a node that has actual
+data and no children.) 
+By ignoring small unbalanced subtrees, we
+can avoid excessive rebalancing.  </p>
+
+<p>
+<a name="rebalance_note"> One note about the rebalance procedure:</a> 
+it is possible for a Lazy BST to
+have two nodes <i>x</i> and <i>y</i> where rebalancing is needed
+where <i>x</i> is an ancestor of <i>y</i>. In this situation, we want to do
+the rebalancing at <i>x</i> since rebalancing the subtree rooted 
+at <i>x</i> will also rebalance the subtree rooted at <i>y</i>. If we
+rebalanced at <i>y</i> first, the time spent rebalancing at <i>y</i>
+is completely wasted since all that work is undone when we rebalance at
+<i>x</i>.  (See <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3-example.shtml#example2">Project&nbsp;3 Examples</a>.)
+</p>
+
+
+<hr>
+<h2>Assignment</h2>
+
+<p>
+<i>Note: Running time is one of the most important considerations in
+the implementation of a data structure. Programs that produce the
+desired output but exceed the required running times are considered
+<i>wrong</i> implementations and will receive substantial deductions
+during grading.</i>
+</p>
+
+<p>
+Your assignment is to implement a Lazy BST. You may start with a binary
+search tree class from the textbook or given by your instructor, if you
+prefer.  You may also design your own. Each option has
+advantages and disadvantages. 
+A primary objective of this programming assignment is to have you use
+recursion. So, one component of grading will evaluate how
+<i>elegantly</i> you employ recursion to implement this data structure.
+(Yes, you are being graded on aesthetics!)
+</p>
+
+<p>
+Since you will choose the design of the class definitions, no header
+files will be distributed with this project. Instead, the requirements
+are:
+</p><ul>
+   <li> The name of the class must be <tt>LazyBST</tt>.
+   </li><li> The header file must be named <tt>LazyBST.h</tt> (case
+   sensitive).
+   </li><li> A client program that includes <tt>LazyBST.h</tt>
+   should compile correctly without including any other
+   header files.
+   </li><li> Your <tt>LazyBST</tt> class must have the member
+   functions with the specified signatures indicated below.
+   </li><li> The implementation of your member functions and
+   any supporting functions must be placed in a single
+   file named <tt>LazyBST.cpp</tt>.
+   </li><li> No STL classes may be used in this programming project.
+</li></ul>
+<p></p>
+
+<p>
+In order to implement  <tt>LazyBST</tt> efficiently, your data structure must
+be able to determine the size and height of a subtree in constant time.
+You must have <b>data members for the height and size of a subtree</b> in the
+class representing the root of a subtree of a Lazy BST.  The
+<b>height</b> and <b>size</b> data members  must be updated whenever the
+height or size of that subtree changes. The update must not affect the
+asymptotic running time of insert, delete and search. These must still
+run in time proportional to the height of the tree.  </p>
+<p></p>
+
+<p>
+To keep things simple for this project, we will just store <tt>int</tt>
+values in <tt>LazyBST</tt>. Although, well-written code should allow you to
+easily change the type of data stored in the data structure.
+</p>
+
+<p>
+Here are the member functions you must implement in your <tt>LazyBST</tt>
+class. (You will need to implement others for your own coding needs.)
+</p><ol>
+
+<li>
+<p>
+A default constructor with the signature
+</p><p></p><pre class="code">   LazyBST::LazyBST() ;
+</pre><p></p>
+The default constructor must create a <tt>LazyBST</tt> object that
+is ready to have its member function invoked without any further
+processing.
+
+</li><li>
+<p>
+A copy constructor with the signature
+</p><p></p><pre class="code">   LazyBST::LazyBST(const LazyBST&amp; other) ;
+</pre><p></p>
+The copy constructor must make a deep copy and create a new object that
+has its own allocated memory.
+
+</li><li>
+<p>
+A destructor with the signature
+</p><p></p><pre class="code">   LazyBST::~LazyBST() ;
+</pre><p></p>
+The destructor must completely free all memory allocated for the object.
+(Use <tt>valgrind</tt> on GL to check for memory leaks.)
+
+
+</li><li>
+<p>
+An overloaded assignment operator with the signature:
+</p><p></p><pre class="code">   const LazyBST&amp; LazyBST::operator=(const LazyBST&amp; rhs) ;
+</pre><p></p>
+The assignment operator must deallocate memory used by the host object
+and then make deep copy of <tt>rhs</tt>.
+
+
+</li><li> 
+<p>
+An insert() function that adds an item to <tt>LazyBST</tt>
+that has the following signature:
+</p>
+<p></p><pre class="code">   void LazyBST::insert (int key) ;
+</pre><p></p>
+<p>
+The <tt>insert()</tt> function  must run in time proportional to the height
+of the Lazy BST 
+<font color="orange">(not counting time for rebalancing).</font>
+Your <tt>LazyBST</tt> implementation must not allow duplicates. 
+If the <tt>insert()</tt> function is invoked with a key value that already
+stored in the Lazy BST, your <tt>insert()</tt> function should do
+nothing, except that it may rebalance the tree if an imbalance is
+detected.
+</p>
+
+
+</li><li> 
+<p>
+A remove() member function that finds and removes an item with the given key
+value.  The <tt>remove()</tt> function should return a boolean value
+that indicates whether the key was found.
+Your <tt>remove()</tt> function should not abort or throw an exception
+when the key is not stored in the BST.
+The <tt>remove()</tt> member function must have the following signature:
+</p>
+<p></p><pre class="code">   bool LazyBST::remove(int key) ;
+</pre><p></p>
+<p>
+For full credit, your <tt>remove()</tt> method must run in time
+proportional to the height of the tree
+<font color="orange">(not counting time for rebalancing).</font>
+</p>
+
+
+</li><li>
+<p>
+A <tt>find()</tt> function that reports whether the given 
+key is stored in the tree. 
+The signature of the <tt>find()</tt> method should be:
+</p>
+<p></p><pre class="code">   bool LazyBST::find(int key) ;
+</pre><p></p>
+<p>
+For full credit, your <tt>find()</tt> method must run in time
+proportional to the height of the tree.
+</p>
+
+
+</li><li>
+<p>
+A member function <tt>rebalance()</tt> that rebalances a subtree of the
+Lazy BST as described above. The running time of <tt>rebalance()</tt>
+must be proportional to the number of nodes in the subtree being rebalanced. 
+Note that a proper implementation would require you the keep track of 
+the size and height of the subtree. Read the description above.
+</p>
+
+
+</li><li> 
+<p>
+A member function <tt>inorder()</tt> that performs an inorder walk of
+the LazyBST and at each node, prints out the key followed by a
+<tt>:</tt> followed by the height of the node followed by another
+<tt>:</tt> followed by the size of the subtree rooted at that node.
+Furthermore, <tt>inorder()</tt> should print an open parenthesis before
+visiting the left subtree and a close parenthesis after visiting the
+right subtree. Nothing should be printed when <tt>inorder()</tt> is
+called on an empty tree, not even parentheses.
+This function will be used for grading, so make sure that it works
+correctly. The function must have the following signature:
+</p>
+<p></p><pre class="code">   void LazyBST::inorder() ;
+</pre><p></p>
+For example, calling <tt>inorder()</tt> on the following BST
+should produce the string:
+<p></p>
+<p>
+</p><blockquote>
+(((((3:0:1)7:2:4((9:0:1)11:1:2))14:3:8((15:1:2(17:0:1))20:2:3))22:4:13(((24:0:1)26:1:2)30:2:4(37:0:1)))41:5:22((((50:0:1)54:1:3(59:0:1))60:2:4)64:3:8((71:1:2(75:0:1))79:2:3)))
+</blockquote>
+<p></p>
+<p>
+</p><div style="border:1px solid grey;margin:0em 5em 0em 5em;">
+<img align="center" src="./Project 3, Lazy Binary Search Trees, CMSC 341 Spring 2017_files/Slide2.jpg">
+<p align="center">
+Fig. 1: an unbalanced binary search tree.
+</p>
+</div>
+<p></p>
+<p>
+Here, the <tt>41:5:22</tt> indicates that the node with key 41
+has height 5 and that there are 22 nodes in the tree.
+The output before <tt>41:5:22</tt> is produced by visiting the
+left subtree. Everything after <tt>41:5:22</tt> is produced
+by visiting the right subtree.
+</p>
+
+<p>
+</p></li><li>
+A function <tt>locate()</tt> that returns whether there is a node in a
+position of the LazyBST and stores the key in the reference parameter.
+The position is given by a constant C string, where a character
+<tt>'L'</tt> indicates left and a character <tt>'R'</tt> indicates
+right. The <tt>locate()</tt> function must have the signature
+<p></p>
+<p></p><pre class="code">   bool LazyBST::locate(const char *position, int&amp; key) ;
+</pre><p></p>
+For example in the BST above:
+<ul>
+   <li> A call to <tt>locate("LRL",key)</tt> should return <tt>true</tt>
+   and store 26 in <tt>key</tt>.
+   </li><li> A call to <tt>locate("RRLR",key)</tt> should return
+   <tt>true</tt> and store 75 in <tt>key</tt>.
+   </li><li> A call to <tt>locate("RLR",key)</tt> should return 
+   <tt>false</tt> and not make any changes to <tt>key</tt>
+   since there is not a node in that position. Note: <tt>locate()</tt>
+   must not abort and must not throw an exception in this situation.
+   </li><li> A call to <tt>locate("",key)</tt> should return <tt>true</tt>
+   and store 41 in <tt>key</tt>, since the empty string indicates the
+   root of tree.
+</li></ul>
+The grading programs will use <tt>locate()</tt> to check if your BST is balanced and
+that the keys are stored correctly. So, make sure <tt>locate()</tt> is
+correct. (This is not a difficult function to implement.)
+</li></ol>
+
+<p>
+Your code must run without segmentation fault and without memory leaks.
+For grading purposes, memory leaks are considered as bad as segmentation
+faults. This is because many segmentation faults are cause by poorly
+written destructors. A program with an empty destructor might avoid some
+segmentation faults but will leak memory horribly. Thus, not
+implementing a destructor or not deleting unused memory  must incur 
+a penalty that is equivalent to a segmentation fault.
+</p>
+
+
+<hr>
+<a name="tests">
+<h2>Test Programs</h2>
+</a>
+
+<p>
+Here are sample driver programs to test your implementation.
+<font color="red"><i>Passing these tests do not mean you will receive
+100% on your project. It does not guarantee that you will pass tests
+used in grading. You should make additional tests of your
+own!</i></font>
+</p>
+
+<p>
+Note: your output may differ from the sample out provided because
+you may have correctly implemented <tt>remove()</tt> and
+<tt>rebalance()</tt> differently.
+</p>
+
+<ul>
+<li>
+Simple test of insertion
+Should see rebalance when inserting 33.
+<br>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test1.cpp">test1.cpp</a> and
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test1.txt">Sample output: test1.txt</a>
+
+</li><li>
+Simple test that also removes nodes.
+Should see rebalancing during remove.
+<br>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test2.cpp">test2.cpp</a> and
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test2.txt">Sample output: test2.txt</a>
+
+</li><li>
+Simple test of inserting and removing.
+This test includes inserting duplicates and attempt to remove keys not in the tree.
+<br>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test3.cpp">test3.cpp</a> and
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test3.txt">Sample output: test3.txt</a>
+
+</li><li>
+Checking return values from remove and find.
+<br>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test4.cpp">test4.cpp</a> and
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test4.txt">Sample output: test4.txt</a>
+
+</li><li>
+Tests copy constructor, destructor and assignment operator
+Should test this with valgrind
+<br>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test5.cpp">test5.cpp</a> and
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test5.txt">Sample output: test5.txt</a>
+
+</li><li>
+Simple test of locate() function
+<br>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test6.cpp">test6.cpp</a> and
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test6.txt">Sample output: test6.txt</a>
+
+</li><li>
+Big test with recursive sanityCheck() and lots of data.
+<br>
+Driver program:
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test7.cpp">test7.cpp</a> and
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3files/test7.txt">Sample output: test7.txt</a>
+</li></ul>
+<p></p>
+
+
+<hr>
+<h2>Implementation Notes</h2> 
+
+<i>Here we list some recommendations and point out some traps and
+pitfalls.</i>
+
+<ul>
+
+<li>
+<p>
+Remember that we are defining the height of a leaf node to be 0.
+(The leaf node here is a node that contains actual data, not the null
+pointers at the bottom of a BST.)
+</p>
+
+</li><li>
+<p>
+There are many places where the height and size of a node needs to be
+updated including, for example, in the rebalance procedure.
+</p>
+
+</li><li> 
+<p>
+When you insert a key that is already in the binary search tree, you are
+supposed to do nothing. (This is one of the standard alternatives.)
+This means you have to be careful about how you update the sizes of the
+subtrees, because when you insert a duplicate, the size does not change!
+(and you won't find out that it is a duplicate until you've found its
+'clone').
+</p>
+
+</li><li>
+<p>
+When should we check if we need to rebalance? One time to consider is
+<i>after</i> we modify the Lazy BST in the <tt>insert()</tt> and
+<tt>remove()</tt> procedures. However, we want to do the rebalancing as
+high up the tree as possible. (See <a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/proj3.shtml#rebalance_note">note
+above</a>.) So, checking for rebalancing after <tt>insert()</tt>
+and <tt>remove()</tt> would require another traversal of the Lazy BST
+from the root.
+</p>
+<p>
+Instead, it is much more convenient to check for rebalancing
+<i>before</i> we insert or remove an item (since we are traversing the
+BST top down). This may seem counter-intuitive since <tt>insert()</tt>
+and <tt>remove()</tt> will mess up our nicely balanced BST
+right after we cleaned it up. However, even if we check for
+rebalancing after these operations, the next <tt>insert()</tt>
+or <tt>remove()</tt> will mess up the tree anyway.
+</p>
+<p>
+Another temptation is to <tt>insert()</tt> or <tt>remove()</tt> the item 
+during the <tt>rebalance()</tt> procedure. (Hey, we are taking this
+subtree apart anyway, surely we can toss in or remove an item while
+we are at it.) This is possible, but not elegant. Let's concentrate on
+elegant uses of recursion in this project.
+</p>
+
+</li></ul>
+
+
+<hr>
+<h2>What to Submit</h2>
+
+<p>
+You must submit the following files to the <tt>proj3</tt> directory.
+</p>
+<p>
+</p><ul>
+<li> <tt>LazyBST.h</tt>
+</li><li> <tt>LazyBST.cpp</tt>
+</li><li> <tt>Driver.cpp</tt>
+</li></ul>
+<p></p>
+<p>
+The <tt>Driver.cpp</tt> program should include tests showing the parts 
+of your project that work correctly.
+</p>
+
+<p>
+If you followed the instructions in the 
+<a href="http://userpages.umbc.edu/~chang/cs341.s17/projects/submission.shtml">Project Submission</a> 
+page to set up your directories, you can submit your code using 
+this Unix command command.
+</p>
+<p></p><xmp class="code">   cp LazyBST.h LazyBST.cpp Driver.cpp ~/cs341proj/proj3/
+</xmp>
+<p></p>
+
+
+      </div>
+      <div id="footer" class="donotprint">
+        <div>
+          <a href="http://userpages.umbc.edu/~chang/cs341.s17/index.shtml">CMSC 341 — Spring 2017 </a>
+        </div>
+        <a href="http://www.csee.umbc.edu/">CSEE</a> |
+        <a href="http://www.umbc.edu/">UMBC</a>
+      </div>
+    </div>
+
+
+
+</body></html>

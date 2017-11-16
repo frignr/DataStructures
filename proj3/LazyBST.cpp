@@ -1,0 +1,473 @@
+// File: LazyBST.cpp
+//
+// CMSC 341 Sprint 2017 Project 3
+// Seung Hun Lee
+// Class definitions for LazyBST
+//
+
+#include "LazyBST.h"
+
+using namespace std;
+
+//Default constructor
+LazyBST::LazyBST(){
+  m_left = NULL;
+  m_right = NULL;
+
+  m_key = 0;
+  m_height = -1;
+  m_numNodes = 0;
+}
+
+//Constructor with key input. Written as a shortcut
+LazyBST::LazyBST(int key){
+  m_left = NULL;
+  m_right = NULL;
+  m_key = key;
+  m_height  = 0;
+  m_numNodes = 1;
+}
+
+//Copy constructor
+LazyBST::LazyBST(const LazyBST& other){
+  m_key = other.m_key;
+  m_height = other.m_height;
+  m_numNodes = other.m_numNodes;
+
+  m_left = NULL;
+  m_right = NULL;
+  if(other.m_left != NULL)
+    m_left = new LazyBST( *(other.m_left) );
+  if(other.m_right != NULL)
+    m_right = new LazyBST( *(other.m_right) );
+}
+
+//Deconstructor
+LazyBST::~LazyBST(){
+  delete m_left;
+  delete m_right;
+  m_left = NULL;
+  m_right = NULL;
+}
+
+//Creates and returns pointer to a LazyBST created from an array
+//When calling, leftEnd should be 0 and rightEnd size of array -1
+LazyBST * LazyBST::arrayToBST(int treeArray[], int leftEnd, int rightEnd){
+  
+  if(leftEnd > rightEnd ) 
+    return NULL;
+
+  LazyBST *newTree = new LazyBST(treeArray[(leftEnd + rightEnd) / 2]);
+  newTree->m_left = arrayToBST(treeArray, leftEnd, (leftEnd + rightEnd)/2 -1); 
+  newTree->m_right = arrayToBST(treeArray, (leftEnd + rightEnd)/2 + 1,rightEnd);
+  newTree->update();
+  return newTree;
+}
+
+//Assignment operator
+const LazyBST& LazyBST::operator=(const LazyBST& rhs){
+  m_key = rhs.m_key;
+  m_height = rhs.m_height;
+  m_numNodes = rhs.m_numNodes;
+  delete m_left;
+  delete m_right;
+  m_left = new LazyBST( *(rhs.m_left) );
+  m_right = new LazyBST( *(rhs.m_right) );
+  return *this;
+}
+
+
+//Insert function wrapper. calls recursive insert function then rebalncechecks.
+void LazyBST::insert(int key){
+  bool rebalanceNeeded = false;
+  insertRecursive(key, rebalanceNeeded);
+  if(m_height > 3 && !checkBalance())
+    rebalance();
+}
+
+//Inserting a node recursively
+void LazyBST::insertRecursive(int key, bool &rebalanceNeeded){
+  //Make this node the key if it was empty
+  if (m_numNodes == 0){
+    m_key = key;
+    m_numNodes ++;
+  }
+
+  bool doRebalance = false;
+  if(m_height > 3 && rebalanceNeeded == false){
+    doRebalance = !checkBalance();
+    rebalanceNeeded = doRebalance;
+  }
+  //Do nothing if this is the node
+  if (key == m_key)
+    return;
+  
+  //If the input key is less than current key
+  if (key < m_key){
+    //Create a new node to left if there is none
+    if(m_left == NULL)
+      m_left = new LazyBST(key);
+    //Otherwise recursive call to left
+    else
+      m_left->insertRecursive(key, rebalanceNeeded);
+  }
+  //Same drill except to the right
+  else{
+    if(m_right == NULL)
+      m_right = new LazyBST(key);
+    else
+      m_right->insertRecursive(key, rebalanceNeeded);
+  }
+  update();//Update height and size. This update will be called bottom up
+
+  if(doRebalance)
+    rebalance();
+}
+
+//Remove wrapper class. returns whether key was in tree or not
+bool LazyBST::remove(int key){
+  bool rebalanceNeeded = false;
+  bool output = removeRecursive(key, rebalanceNeeded);
+  if(!checkBalance() && m_height > 3)
+    rebalance();
+  //updateTree();
+  return output;
+}
+
+//Removing a node recursively
+bool LazyBST::removeRecursive(int key, bool& rebalanceNeeded){
+
+  bool rebalanceNeededWas = rebalanceNeeded;//stores what rebalance needed was. Free to rebalance if it is false
+  if(m_height > 3 && rebalanceNeeded == false){
+    rebalanceNeeded = !checkBalance();
+    
+  }
+  //If this is the key to remove
+  if (key == m_key){
+    LazyBST * temp;
+    //This node has no children set it to an empty node
+    if(m_left == NULL && m_right == NULL ){
+      m_key = 0;
+      m_height = -1;
+      m_numNodes = 0;
+    }
+    //This node has no children to left. Replace current node with right
+    else if(m_left == NULL){
+      temp = m_right;
+      m_key = temp->m_key;
+      m_left = temp->m_left;
+      m_right = temp->m_right;
+      m_height = temp->m_height;
+      m_numNodes = temp->m_numNodes;
+      temp->m_left = NULL;
+      temp->m_right = NULL;
+      delete temp;
+      update();
+    }
+    //This node has no children to right or left has no right. Replace current node with left
+    else if(m_right == NULL || m_left->m_right == NULL){
+      temp = m_left;
+      m_key = temp->m_key;
+      m_left = temp->m_left;
+      if(m_right == NULL)
+	m_right = temp->m_right;
+      m_height = temp->m_height;
+      m_numNodes = temp->m_numNodes;
+      temp->m_left = NULL;
+      temp->m_right = NULL;
+      delete temp;
+      update();
+    }
+    //All others. Meaning left and right children present, pretty packed tree
+    else{
+      temp = m_left;
+      //Find the max node of left tree
+      while(temp->m_right->m_right != NULL){
+      	temp = temp->m_right;
+      }
+      m_key = temp->m_right->m_key;
+      LazyBST* tempDelete = temp->m_right;//node to delete
+      temp->m_right = tempDelete->m_left;
+      tempDelete->m_left = NULL;
+      delete tempDelete;
+      update();
+    }
+    return true;
+  }
+  //Recursive call to left if key is less
+  if (key < m_key && m_left != NULL){
+    bool output =  m_left->removeRecursive(key, rebalanceNeeded);
+    //Delete node marked empty if there are any
+    if(m_left->m_height < 0){
+      delete m_left;
+      m_left = NULL;
+    }
+    if(m_left != NULL){
+      if(!rebalanceNeededWas){
+	if( m_left->m_height > 3 && !m_left->checkBalance())
+	  m_left->rebalance();
+      }
+    }
+    update();
+    return output;
+  }
+	//Recursive call to right if key is greater
+  if (key > m_key && m_right != NULL){
+    bool output = m_right->removeRecursive(key, rebalanceNeeded);
+    //Delete node marked empty if there are any
+    if(m_right->m_height < 0){
+      delete m_right;
+      m_right = NULL;
+    }
+    if(m_right != NULL){
+      if(!rebalanceNeededWas){
+	if(m_right->m_height > 3 && !m_right->checkBalance())
+	  rebalance();
+      }
+    }
+    update();
+    return output;
+  }
+  if(m_height > 3 && !checkBalance() && ! rebalanceNeededWas)
+    rebalance();
+  return false;
+}
+
+//Checking if a key is present
+bool LazyBST::find(int key){
+  //Check if this is the node with the key
+  if (key == m_key)
+    return true;
+  //Else recursive call, or return false if it can't go further
+  else{
+    if(key < m_key && m_left != NULL){
+      return m_left->find(key);
+    }
+    if(key > m_key && m_right != NULL){
+      return m_right->find(key);
+    }
+    return false;
+  }
+}
+
+//Update a node's height and numNodes
+void LazyBST::update(){
+  
+  //Special case of empty node. Don't update
+  if(m_height == -1 && m_key == 0)
+    return;
+  int leftHeight;
+  int rightHeight;
+  int leftNumNodes;
+  int rightNumNodes;
+
+  //Find numbers to left
+  //height of -1 means a empty node so remove it
+  if(m_left == NULL){
+    leftHeight = -1;
+    leftNumNodes = 0;
+  }
+  else{
+    if(m_left->m_height == -1){
+      delete m_left;
+      m_left = NULL;
+    }
+    leftHeight = m_left->m_height;
+    leftNumNodes = m_left->m_numNodes;
+  }
+
+  //Find numbers to right
+  if(m_right == NULL){
+    rightHeight = -1;
+    rightNumNodes = 0;
+  }
+  else{
+    if(m_right->m_height == -1){
+      delete m_right;
+      m_right = NULL;
+    }
+    rightHeight = m_right->m_height;
+    rightNumNodes = m_right->m_numNodes;
+  }
+  //Set height and numNodes
+  if(leftHeight > rightHeight)
+    m_height = leftHeight + 1;
+  else
+    m_height = rightHeight + 1;
+  m_numNodes = leftNumNodes + rightNumNodes + 1;
+}
+
+//Calls update recursively 
+void LazyBST::updateTree(){
+  if(m_left!= NULL)
+    m_left->updateTree();
+  if(m_right != NULL)
+    m_right->updateTree();
+  update();
+}
+
+//Prints out nodes of tree in order to specification
+void LazyBST::inorder(){
+  cout << toString() << endl;
+}
+
+//Converts tree into string
+string LazyBST::toString(){
+
+  string fullString;//Full string that will be returned
+
+  stringstream ss;//Stringstream to convert int to string
+
+  string key;
+  string height;
+  string numNodes;
+  fullString = "(";
+  //Append string of left tree
+  if(m_left != NULL)
+    fullString.append(m_left->toString());
+  //Append data of this node
+  ss << m_key << ' ' << m_height << ' ' << m_numNodes;
+  ss >> key >> height >> numNodes;
+  
+  fullString.append(key);
+  fullString.append(":");
+  fullString.append(height);
+  fullString.append(":");
+  fullString.append(numNodes);
+
+  //Append string of right tree
+  if(m_right != NULL)
+    fullString.append(m_right->toString());
+
+  fullString.append(")");
+  return fullString;
+}
+
+//Checks whether tree is balanced. 
+bool LazyBST::checkBalance(){
+  //If both children are present
+  if(m_left != NULL && m_right != NULL){
+    if (m_left->m_height > m_right->m_height + 1)
+      return false;
+    if (m_left->m_height + 1 < m_right->m_height)
+      return false;
+    if (m_left->m_numNodes > 2 * m_right->m_numNodes)
+      return false;
+    if (2 * m_left->m_numNodes < m_right->m_numNodes)
+      return false;
+  }
+  //One of children missing
+  else{
+    if(m_left != NULL){
+      if(m_left->m_height > 0)
+      	return false;
+    }
+    if(m_right != NULL){
+      if(m_right->m_height > 0)
+	      return false;
+    }
+  }
+  return true;
+}
+
+//Rebalances the tree if needed
+//No longer used in this version because if its slowness
+void LazyBST::rebalanceCheck(){
+  //Does not check balance for height less than 4
+  if(m_height > 3){
+    bool balance = checkBalance();
+    //Calls rebalance if not balanced
+    if(!balance){
+      rebalance();
+    }
+    else{
+      //Continues checking if height of children is greater than 3
+      
+      if( m_height > 4){
+      	if(m_left!= NULL)
+	        m_left->rebalanceCheck();
+	      if(m_right!= NULL)
+	        m_right->rebalanceCheck();
+      }
+    }
+  }
+}
+
+//Rebalances the tree
+void LazyBST::rebalance(){
+
+  int arraySize = m_numNodes; //Stores array size
+  int treeArray[arraySize]; //Array to store tree values
+  //Turn tree into array
+  fillArray(treeArray, m_numNodes, 0);
+  //Make a tree from the array
+  LazyBST * newTree = arrayToBST(treeArray, 0, m_numNodes -1);
+
+  //Replace this tree with the new array
+  if(m_left != NULL)
+    delete m_left;
+  if(m_right != NULL)
+    delete m_right;
+  m_key = newTree->m_key;
+  m_height = newTree->m_height;
+  m_numNodes = newTree->m_numNodes;
+  m_left = newTree->m_left;
+  m_right = newTree->m_right;
+
+  //Unlink the newTree and delete it
+  newTree->m_left = NULL;
+  newTree->m_right = NULL;
+  delete newTree;
+  update();
+}
+
+//Fills an array from a tree.
+void LazyBST::fillArray(int treeArray[], int size, int position){
+  if(m_left != NULL){
+    treeArray[m_left->m_numNodes + position] = m_key;
+  }
+  else{
+    treeArray[position] = m_key;
+  }
+  if(m_left != NULL)
+    m_left->fillArray(treeArray, size, position);
+  if(m_right != NULL){
+    int leftNum = 0;
+    if (m_left != NULL)
+      leftNum = m_left->m_numNodes;
+    m_right->fillArray(treeArray, size, position + leftNum + 1);
+  }
+}
+
+//Returns whether a tree of the coordinate give exists
+bool LazyBST::locate(const char *position, int& key){
+  int index = 0;
+  LazyBST * currentNode = this;
+  //Reads through the coordinates
+  while( position[index] != '\0'){
+    //Steps to left
+    if(position[index] == 'L' || position[index] == 'l'){
+      if(currentNode->m_left == NULL)
+      	return false;
+      else{
+      	index ++;
+      	currentNode = currentNode->m_left;
+      }
+    }
+    //Steps to right
+    else if(position[index] == 'R' || position[index] == 'r'){
+      if(currentNode->m_right == NULL)
+      	return false;
+      else{
+      	index ++;
+      	currentNode = currentNode->m_right;
+      }
+    }
+    //Coordinates invalid
+    else{
+      return false;
+    }
+  }
+  key = currentNode->m_key;
+  return true;
+}

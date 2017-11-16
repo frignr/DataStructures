@@ -1,0 +1,237 @@
+// File: test.sally
+//
+// CMSC 341 Spring 2017 Project 2
+//
+// Sally FORTH source code
+//
+// Various tests
+
+."Testing printing out string literals"     // string literals between ." and "
+.                                      // . prints top of the stack
+CR                                     // prints carriage return
+."Testing addition 3 + 5 ="
+.
+SP                            // prints a space character
+3 5 +                         // computes the sum
+.                             // prints the top of the stack again
+CR
+
+."Arithmetic tests"
+.
+CR
+7 -6 + . CR          
+
+1 3 -  NEG . CR
+
+9 3 / . CR 
+
+12 8 % . CR
+
+3 4 * -3 NEG +  13 3 -  % . CR
+
+."Testing DUP, DROP, SWAP, ROT"
+.
+CR
+
+15 DUP . SP . CR          // Prints 15 15 
+
+17 14 DROP . CR           // Prints 17
+
+20 30 SWAP . SP  . CR     // Prints 20 30
+
+1 3 2 ROT . SP . SP . CR  // Prints 1 2 3
+
+."Testing variables"
+.
+CR
+
+1 x SET             // x = 1
+x @ . CR            // printf("%d\n", x) ;
+
+x @ 1 + x !         // x = x + 1
+x @ . CR            // printf("%d\n", x) ;
+
+0 y SET             // y = 0
+x @ 2 + y !         // y = x + 2 
+y @ . CR            // printf("%d\n", y) ;
+
+."Testing duplicate SET"
+.
+CR
+2 x SET
+
+."Calling on non-existent variable"
+.
+CR
+nothing @
+
+."Testing assignment to non-existent variable"
+.
+
+2 nothing !
+
+
+."Testing comparison operators"
+.
+CR
+17 13 <  . CR
+17 23 <  . CR
+
+35 31 <= . CR
+31 31 <= . CR
+
+91 19 == . CR
+19 19 == . CR
+
+19 19 != . CR
+91 19 != . CR
+
+37 43 >= . CR
+43 43 >= . CR
+
+61 75 >  . CR
+95 75 >  . CR
+
+."Testing AND, OR, NOT"
+.
+CR
+
+
+12 a SET
+
+."Truth table for AND" . CR
+a @ 13 >=  a @ 11 <=   AND . CR
+a @ 13 >=  a @ 20 <=   AND . CR
+a @ 11 >=  a @  9 <=   AND . CR
+a @ 10 >=  a @ 20 <=   AND . CR
+CR
+
+."Truth table for OR" . CR
+a @ 13 >=  a @ 11 <=   OR . CR
+a @ 13 >=  a @ 20 <=   OR . CR
+a @ 11 >=  a @  9 <=   OR . CR
+a @ 10 >=  a @ 20 <=   OR . CR
+CR
+
+."Truth table for NOT" . CR
+a @ 15 >= NOT . CR
+a @  5 >= NOT . CR
+
+."Testing IFTHEN with weird formatting"
+.
+CR
+1 IFTHEN 
+
+
+	."True so if is run". CR  ELSE ."Something's wrong". CR ENDIF
+
+
+."Testing Nested IFTHEN"
+.
+CR
+5 7 < 
+IFTHEN
+   1 1 + 2 ==
+   IFTHEN
+      3 2 % 0 == 
+      IFTHEN 
+        ."Something's wrong" . CR
+      ELSE
+        ."Talk like Yoda, we do" . CR
+      ENDIF 
+   ELSE
+     ."Something's wrong 2" . CR
+   ENDIF
+ELSE
+   1 1 + 3 ==
+   IFTHEN
+      ."Something's wrong 3" . CR
+   ELSE
+      ."Something's wrong 4" . CR
+   ENDIF
+ENDIF
+
+."Testing DO UNTIL"
+.
+CR
+0 j SET
+
+DO
+
+  j @ 1 + j !    // j++
+  j @ . CR       // print j
+
+j @ 10 >= UNTIL  // until j >= 10
+
+."Testing IFTHEN with DO UNTIL inside" . CR
+0 i SET
+1 IFTHEN
+	DO
+		i @ 1 + i !
+		i @ . CR
+	i @ 10 >= UNTIL
+ELSE
+	."Something's wrong" . CR
+ENDIF
+
+0 k SET
+0 IFTHEN
+	."Something's wrong" . CR
+ELSE
+	DO
+		k @ 1 + k !
+		k @ . CR
+	k @ 10 >= UNTIL
+ENDIF
+
+
+."Testing DO UNTIL with IFTHEN inside"
+.
+CR
+
+0 j !
+DO
+	
+	j @ 1 + j !
+	j @ . CR
+	j @ 2 % IFTHEN
+		."Yep" . CR
+	ELSE
+		 ."Nope" . CR
+	ENDIF
+
+j @ 10 >= UNTIL
+
+
+
+."Testing Nested DO UNTIL"
+.
+CR
+
+1 DO
+
+   // inner loop
+   1 DO
+     SWAP DUP . SWAP  // print outer loop index
+     SP
+
+
+     DUP . CR         // print inner loop index
+     1 + DUP          // increment inner loop index
+
+
+   5 > UNTIL
+   DROP               // ditch inner loop index 
+
+
+   CR
+   1 + DUP            // increment outer loop index
+
+5 > UNTIL             
+DROP                  // ditch outer loop index
+
+."Done"
+.
+CR
+
+
